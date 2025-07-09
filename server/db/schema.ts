@@ -82,6 +82,73 @@ export interface EnergyLog {
   recorded_at: string;
 }
 
+export interface Donor {
+  id: number;
+  email: string;
+  name: string;
+  donor_id: string;
+  preferred_currency: string;
+  total_donated: number;
+  total_seeds_received: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Donation {
+  id: number;
+  donation_id: string;
+  donor_id: number;
+  amount: number;
+  currency: string;
+  donation_type: 'SPECIFIC_PROJECT' | 'CATEGORY_POOL' | 'GENERAL_SEEDBANK';
+  target_dream_id: number | null;
+  target_category: string | null;
+  seeds_generated: number;
+  conversion_rate: number;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+  donor_message: string | null;
+  payment_reference: string | null;
+  created_at: string;
+  confirmed_at: string | null;
+}
+
+export interface SeedStake {
+  id: number;
+  user_id: number;
+  dream_id: number;
+  amount: number;
+  staked_at: string;
+  unlock_at: string;
+  pollination_points: number;
+  is_active: boolean;
+}
+
+export interface DonationLink {
+  id: number;
+  link_id: string;
+  dream_id: number | null;
+  category: string | null;
+  link_type: 'PROJECT' | 'CATEGORY' | 'GENERAL';
+  custom_message: string | null;
+  is_active: boolean;
+  click_count: number;
+  total_raised: number;
+  created_at: string;
+}
+
+export interface SeedFlowEvent {
+  id: number;
+  event_type: 'DONATION' | 'TRANSFER' | 'POLLINATION' | 'STAKE' | 'UNSTAKE';
+  from_entity: string | null;
+  to_entity: string | null;
+  amount: number;
+  seeds_involved: number;
+  dream_id: number | null;
+  transaction_hash: string | null;
+  metadata: string | null;
+  created_at: string;
+}
+
 export interface DatabaseSchema {
   users: User;
   dreams: Dream;
@@ -91,4 +158,9 @@ export interface DatabaseSchema {
   seed_wallets: SeedWallet;
   seed_transactions: SeedTransaction;
   energy_logs: EnergyLog;
+  donors: Donor;
+  donations: Donation;
+  seed_stakes: SeedStake;
+  donation_links: DonationLink;
+  seed_flow_events: SeedFlowEvent;
 }

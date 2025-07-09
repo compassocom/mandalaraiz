@@ -5,6 +5,7 @@ import { db } from './db/index.js';
 import { DreamService } from './services/dreamService.js';
 import { SeedService } from './services/seedService.js';
 import { EnergyService } from './services/energyService.js';
+import { DonationService } from './services/donationService.js';
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ const app = express();
 const dreamService = new DreamService();
 const seedService = new SeedService();
 const energyService = new EnergyService();
+const donationService = new DonationService();
 
 // Body parsing middleware
 app.use(express.json());
@@ -234,6 +236,17 @@ app.get('/api/users/:id/transactions', async (req, res) => {
   }
 });
 
+app.get('/api/users/:id/stakes', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const stakes = await seedService.getUserStakes(userId);
+    res.json(stakes);
+  } catch (error) {
+    console.error('Error fetching stakes:', error);
+    res.status(500).json({ error: 'Failed to fetch stakes' });
+  }
+});
+
 app.post('/api/transactions', async (req, res) => {
   try {
     const { from_user_id, to_user_id, amount, type, description, dream_id } = req.body;
@@ -250,7 +263,108 @@ app.post('/api/transactions', async (req, res) => {
     res.json(transaction);
   } catch (error) {
     console.error('Error processing transaction:', error);
-    res.status(500).json({ error: 'Failed to process transaction' });
+    res.status(500).json({ error: error.message || 'Failed to process transaction' });
+  }
+});
+
+// Donation endpoints
+app.post('/api/donation-links', async (req, res) => {
+  try {
+    const { type, dream_id, category, custom_message } = req.body;
+    
+    const link = await donationService.createDonationLink(
+      type,
+      dream_id,
+      category,
+      custom_message
+    );
+
+    res.json(link);
+  } catch (error) {
+    console.error('Error creating donation link:', error);
+    res.status(500).json({ error: 'Failed to create donation link' });
+  }
+});
+
+app.post('/api/donors', async (req, res) => {
+  try {
+    const { email, name, preferred_currency } = req.body;
+    
+    const donor = await donationService.registerDonor(email, name, preferred_currency);
+    res.json(donor);
+  } catch (error) {
+    console.error('Error registering donor:', error);
+    res.status(500).json({ error: 'Failed to register donor' });
+  }
+});
+
+app.post('/api/donations', async (req, res) => {
+  try {
+    const {
+      donor_id,
+      amount,
+      currency,
+      donation_type,
+      target_dream_id,
+      target_category,
+      donor_message,
+      payment_reference
+    } = req.body;
+    
+    const donation = await donationService.processDonation(
+      donor_id,
+      amount,
+      currency,
+      donation_type,
+      target_dream_id,
+      target_category,
+      donor_message,
+      payment_reference
+    );
+
+    res.json(donation);
+  } catch (error) {
+    console.error('Error processing donation:', error);
+    res.status(500).json({ error: 'Failed to process donation' });
+  }
+});
+
+app.get('/api/analytics/donations', async (req, res) => {
+  try {
+    const analytics = await donationService.getDonationAnalytics();
+    res.json(analytics);
+  } catch (error) {
+    console.error('Error fetching donation analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+app.get('/api/donors/:id/impact', async (req, res) => {
+  try {
+    const donorId = parseInt(req.params.id);
+    const impact = await donationService.getDonorImpact(donorId);
+    
+    if (!impact) {
+      res.status(404).json({ error: 'Donor not found' });
+      return;
+    }
+
+    res.json(impact);
+  } catch (error) {
+    console.error('Error fetching donor impact:', error);
+    res.status(500).json({ error: 'Failed to fetch donor impact' });
+  }
+});
+
+app.post('/api/stakes', async (req, res) => {
+  try {
+    const { user_id, dream_id, amount, months_locked } = req.body;
+    
+    await donationService.stakeSeeds(user_id, dream_id, amount, months_locked || 12);
+    res.json({ success: true, message: 'Seeds staked successfully' });
+  } catch (error) {
+    console.error('Error staking seeds:', error);
+    res.status(500).json({ error: error.message || 'Failed to stake seeds' });
   }
 });
 
