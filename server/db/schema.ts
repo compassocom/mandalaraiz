@@ -149,6 +149,89 @@ export interface SeedFlowEvent {
   created_at: string;
 }
 
+// Token Economy Interfaces
+export interface UserTokens {
+  id: number;
+  user_id: number;
+  seeds_balance: number;
+  roots_balance: number;
+  total_seeds_earned: number;
+  total_roots_earned: number;
+  last_daily_reward: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TokenTransaction {
+  id: number;
+  user_id: number;
+  transaction_type: 'EARN_SEEDS' | 'BURN_SEEDS' | 'CONVERT_TO_ROOTS' | 'MARKETPLACE_BUY' | 'MARKETPLACE_SELL' | 'WITHDRAW_ROOTS';
+  amount: number;
+  token_type: 'SEEDS' | 'ROOTS';
+  description: string | null;
+  burn_amount: number;
+  fee_amount: number;
+  created_at: string;
+}
+
+// Marketplace Interfaces
+export interface MarketplaceListing {
+  id: number;
+  seller_id: number;
+  title: string;
+  description: string;
+  price_seeds: number;
+  category: 'PRODUCT' | 'SERVICE' | 'DIGITAL' | 'OTHER';
+  subcategory: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
+  location_text: string | null;
+  images: string | null;
+  is_active: boolean;
+  is_approved: boolean;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MarketplaceTransaction {
+  id: number;
+  listing_id: number;
+  buyer_id: number;
+  seller_id: number;
+  price_seeds: number;
+  fee_seeds: number;
+  seller_receives_seeds: number;
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED';
+  buyer_rating: number | null;
+  seller_rating: number | null;
+  buyer_review: string | null;
+  seller_review: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface UserRating {
+  id: number;
+  user_id: number;
+  seller_rating: number;
+  buyer_rating: number;
+  total_sales: number;
+  total_purchases: number;
+  seller_reviews_count: number;
+  buyer_reviews_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SystemConfig {
+  id: number;
+  config_key: string;
+  config_value: string;
+  description: string | null;
+  updated_at: string;
+}
+
 export interface DatabaseSchema {
   users: User;
   dreams: Dream;
@@ -163,4 +246,10 @@ export interface DatabaseSchema {
   seed_stakes: SeedStake;
   donation_links: DonationLink;
   seed_flow_events: SeedFlowEvent;
+  user_tokens: UserTokens;
+  token_transactions: TokenTransaction;
+  marketplace_listings: MarketplaceListing;
+  marketplace_transactions: MarketplaceTransaction;
+  user_ratings: UserRating;
+  system_config: SystemConfig;
 }
