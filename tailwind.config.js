@@ -49,6 +49,11 @@ export default {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+        // Mandala Raiz Phase Colors
+        'phase-dream': 'hsl(var(--mandala-dream))',
+        'phase-plan': 'hsl(var(--mandala-plan))',
+        'phase-act': 'hsl(var(--mandala-act))',
+        'phase-celebrate': 'hsl(var(--mandala-celebrate))',
       },
     },
   },
