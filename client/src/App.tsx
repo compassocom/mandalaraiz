@@ -9,6 +9,7 @@ import { CollectiveCareAgreementPage } from './pages/CollectiveCareAgreementPage
 import { PrivacyPage } from './pages/PrivacyPage';
 import { RegenerativeFAQPage } from './pages/RegenerativeFAQPage';
 import { DragonPrinciplesPage } from './pages/DragonPrinciplesPage';
+import { MarketplacePage } from './pages/MarketplacePage';
 import { Footer } from './components/Footer';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
             <Route path="/create-dream" element={<CreateDreamPage />} />
             <Route path="/dream/:id" element={<DreamPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/sow/:linkId" element={<SowPage />} />
             <Route path="/agreement" element={<CollectiveCareAgreementPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
