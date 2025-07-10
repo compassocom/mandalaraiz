@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { GoogleMap } from '@/components/GoogleMap';
 import { ArrowLeft, MapPin, Users, Activity, Coins } from 'lucide-react';
 import { EnergyDashboard } from '@/components/EnergyDashboard';
 import { TaskList } from '@/components/TaskList';
@@ -57,18 +58,28 @@ export const DreamPage = () => {
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'DREAM': return 'bg-blue-500';
-      case 'PLAN': return 'bg-yellow-500';
-      case 'ACT': return 'bg-green-500';
-      case 'CELEBRATE': return 'bg-purple-500';
+      case 'DREAM': return 'phase-dream';
+      case 'PLAN': return 'phase-plan';
+      case 'ACT': return 'phase-act';
+      case 'CELEBRATE': return 'phase-celebrate';
       default: return 'bg-gray-500';
+    }
+  };
+
+  const getPhaseText = (phase: string) => {
+    switch (phase) {
+      case 'DREAM': return 'SONHAR';
+      case 'PLAN': return 'PLANEJAR';
+      case 'ACT': return 'AGIR';
+      case 'CELEBRATE': return 'CELEBRAR';
+      default: return phase;
     }
   };
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading dream...</div>
+        <div className="text-center">Carregando sonho...</div>
       </div>
     );
   }
@@ -77,7 +88,7 @@ export const DreamPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center text-red-500">
-          Error: {error || 'Dream not found'}
+          Erro: {error || 'Sonho não encontrado'}
         </div>
       </div>
     );
@@ -92,7 +103,7 @@ export const DreamPage = () => {
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
+          Voltar ao Início
         </Button>
         
         <div className="flex items-center justify-between">
@@ -101,16 +112,16 @@ export const DreamPage = () => {
             <div className="flex items-center space-x-4 mt-2 text-muted-foreground">
               <div className="flex items-center">
                 <MapPin className="mr-1 h-4 w-4" />
-                <span>{dream.visibility_radius}m radius</span>
+                <span>Raio de {dream.visibility_radius}m</span>
               </div>
               <div className="flex items-center">
                 <Users className="mr-1 h-4 w-4" />
-                <span>{dream.participants.length}/{dream.participant_limit} participants</span>
+                <span>{dream.participants.length}/{dream.participant_limit} participantes</span>
               </div>
             </div>
           </div>
           <Badge className={getPhaseColor(dream.phase)}>
-            {dream.phase}
+            {getPhaseText(dream.phase)}
           </Badge>
         </div>
       </div>
@@ -119,7 +130,7 @@ export const DreamPage = () => {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Description</CardTitle>
+              <CardTitle>Descrição</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">{dream.description}</p>
@@ -141,12 +152,44 @@ export const DreamPage = () => {
 
           <Card>
             <CardHeader>
+              <CardTitle>Localização</CardTitle>
+              <CardDescription>
+                Onde este sonho está sendo cultivado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] rounded-md overflow-hidden">
+                <GoogleMap
+                  center={{
+                    lat: dream.location_lat,
+                    lng: dream.location_lng,
+                  }}
+                  zoom={15}
+                  markers={[
+                    {
+                      id: dream.id.toString(),
+                      position: {
+                        lat: dream.location_lat,
+                        lng: dream.location_lng,
+                      },
+                      title: dream.title,
+                      phase: dream.phase,
+                    },
+                  ]}
+                  className="w-full h-full"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle className="flex items-center">
                 <Activity className="mr-2 h-5 w-5" />
-                Energy Dashboard
+                Painel de Energia
               </CardTitle>
               <CardDescription>
-                Real-time health and collaboration metrics
+                Métricas de saúde e colaboração em tempo real
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -156,9 +199,9 @@ export const DreamPage = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Tasks</CardTitle>
+              <CardTitle>Tarefas</CardTitle>
               <CardDescription>
-                Collaborative task management
+                Gestão colaborativa de tarefas
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -170,7 +213,7 @@ export const DreamPage = () => {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Participants</CardTitle>
+              <CardTitle>Participantes</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -179,7 +222,7 @@ export const DreamPage = () => {
                     <div>
                       <div className="font-medium">{participant.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        Joined {new Date(participant.joined_at).toLocaleDateString()}
+                        Juntou-se em {new Date(participant.joined_at).toLocaleDateString('pt-BR')}
                       </div>
                     </div>
                   </div>
@@ -187,7 +230,7 @@ export const DreamPage = () => {
                 
                 {dream.participants.length === 0 && (
                   <p className="text-muted-foreground text-center py-4">
-                    No participants yet
+                    Ainda não há participantes
                   </p>
                 )}
               </div>
@@ -198,10 +241,10 @@ export const DreamPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Coins className="mr-2 h-5 w-5" />
-                Seed Wallet
+                Carteira de Sementes
               </CardTitle>
               <CardDescription>
-                Regenerative currency system
+                Sistema de moeda regenerativa
               </CardDescription>
             </CardHeader>
             <CardContent>

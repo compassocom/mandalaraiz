@@ -24,7 +24,7 @@ export const SowPage = () => {
   const [donationType, setDonationType] = useState<'SPECIFIC_PROJECT' | 'CATEGORY_POOL' | 'GENERAL_SEEDBANK'>('SPECIFIC_PROJECT');
   const [donationData, setDonationData] = useState({
     amount: '',
-    currency: 'USD',
+    currency: 'BRL',
     donor_name: '',
     donor_email: '',
     message: ''
@@ -55,23 +55,43 @@ export const SowPage = () => {
       case 'SPECIFIC_PROJECT':
         return {
           rate: '1:1',
-          description: 'Every $1 becomes 1 Seed directly supporting this project',
-          autopollination: 'None'
+          description: 'Cada R$ 1 vira 1 Semente apoiando diretamente este projeto',
+          autopollination: 'Nenhuma'
         };
       case 'CATEGORY_POOL':
         return {
           rate: '1:1',
-          description: 'Every $1 becomes 1 Seed for projects in this category',
-          autopollination: '10% to SeedBank'
+          description: 'Cada R$ 1 vira 1 Semente para projetos desta categoria',
+          autopollination: '10% para o Banco de Sementes'
         };
       case 'GENERAL_SEEDBANK':
         return {
           rate: '1:0.8',
-          description: 'Every $1 becomes 0.8 Seeds for community auto-pollination',
-          autopollination: '20% to other projects'
+          description: 'Cada R$ 1 vira 0.8 Sementes para auto-polinização comunitária',
+          autopollination: '20% para outros projetos'
         };
       default:
-        return { rate: '1:1', description: '', autopollination: 'None' };
+        return { rate: '1:1', description: '', autopollination: 'Nenhuma' };
+    }
+  };
+
+  const getPhaseColor = (phase: string) => {
+    switch (phase) {
+      case 'DREAM': return 'phase-dream';
+      case 'PLAN': return 'phase-plan';
+      case 'ACT': return 'phase-act';
+      case 'CELEBRATE': return 'phase-celebrate';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getPhaseText = (phase: string) => {
+    switch (phase) {
+      case 'DREAM': return 'SONHAR';
+      case 'PLAN': return 'PLANEJAR';
+      case 'ACT': return 'AGIR';
+      case 'CELEBRATE': return 'CELEBRAR';
+      default: return phase;
     }
   };
 
@@ -79,7 +99,7 @@ export const SowPage = () => {
     e.preventDefault();
     
     if (!donationData.amount || !donationData.donor_name || !donationData.donor_email) {
-      alert('Please fill in all required fields');
+      alert('Por favor, preencha todos os campos obrigatórios');
       return;
     }
 
@@ -116,11 +136,11 @@ export const SowPage = () => {
       if (!donationResponse.ok) throw new Error('Failed to process donation');
       const donation = await donationResponse.json();
 
-      alert(`Thank you! Your $${donationData.amount} has been converted to ${donation.seeds_generated} Seeds.`);
+      alert(`Obrigado! Seus R$ ${donationData.amount} foram convertidos em ${donation.seeds_generated} Sementes.`);
       navigate('/');
     } catch (error) {
       console.error('Error processing donation:', error);
-      alert('Failed to process donation. Please try again.');
+      alert('Falha ao processar doação. Por favor, tente novamente.');
     }
   };
 
@@ -129,7 +149,7 @@ export const SowPage = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading donation page...</div>
+        <div className="text-center">Carregando página de doação...</div>
       </div>
     );
   }
@@ -143,22 +163,22 @@ export const SowPage = () => {
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
+          Voltar ao Início
         </Button>
-        <h1 className="text-3xl font-bold mb-2">Plant Seeds of Change</h1>
+        <h1 className="text-3xl font-bold mb-2 text-phase-celebrate">Plantar Sementes de Mudança</h1>
         <p className="text-muted-foreground">
-          Transform your donation into regenerative energy that grows community projects
+          Transforme sua doação em energia regenerativa que faz crescer projetos comunitários
         </p>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="space-y-6">
           {dream && (
-            <Card>
+            <Card className={`border-2 border-${getPhaseColor(dream.phase).replace('phase-', 'phase-')}`}>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Heart className="mr-2 h-5 w-5 text-red-500" />
-                  Supporting: {dream.title}
+                  Apoiando: {dream.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -168,21 +188,23 @@ export const SowPage = () => {
                     <Badge key={index} variant="secondary">{tag}</Badge>
                   ))}
                 </div>
-                <Badge className="bg-blue-500">{dream.phase}</Badge>
+                <Badge className={getPhaseColor(dream.phase)}>
+                  {getPhaseText(dream.phase)}
+                </Badge>
               </CardContent>
             </Card>
           )}
 
           <Card>
             <CardHeader>
-              <CardTitle>Donation Type</CardTitle>
-              <CardDescription>Choose how your energy flows</CardDescription>
+              <CardTitle>Tipo de Doação</CardTitle>
+              <CardDescription>Escolha como sua energia flui</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div 
                   className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                    donationType === 'SPECIFIC_PROJECT' ? 'border-primary bg-primary/5' : 'border-border'
+                    donationType === 'SPECIFIC_PROJECT' ? 'border-phase-dream bg-red-50' : 'border-border'
                   }`}
                   onClick={() => setDonationType('SPECIFIC_PROJECT')}
                 >
@@ -192,14 +214,14 @@ export const SowPage = () => {
                       checked={donationType === 'SPECIFIC_PROJECT'} 
                       onChange={() => setDonationType('SPECIFIC_PROJECT')}
                     />
-                    <span className="font-medium">Direct to Project</span>
+                    <span className="font-medium">Direto ao Projeto</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">1:1 conversion • No auto-pollination</p>
+                  <p className="text-sm text-muted-foreground">Conversão 1:1 • Sem auto-polinização</p>
                 </div>
 
                 <div 
                   className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                    donationType === 'CATEGORY_POOL' ? 'border-primary bg-primary/5' : 'border-border'
+                    donationType === 'CATEGORY_POOL' ? 'border-phase-plan bg-yellow-50' : 'border-border'
                   }`}
                   onClick={() => setDonationType('CATEGORY_POOL')}
                 >
@@ -209,14 +231,14 @@ export const SowPage = () => {
                       checked={donationType === 'CATEGORY_POOL'} 
                       onChange={() => setDonationType('CATEGORY_POOL')}
                     />
-                    <span className="font-medium">Category Pool</span>
+                    <span className="font-medium">Pool da Categoria</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">1:1 conversion • 10% to SeedBank</p>
+                  <p className="text-sm text-muted-foreground">Conversão 1:1 • 10% para o Banco de Sementes</p>
                 </div>
 
                 <div 
                   className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                    donationType === 'GENERAL_SEEDBANK' ? 'border-primary bg-primary/5' : 'border-border'
+                    donationType === 'GENERAL_SEEDBANK' ? 'border-phase-act bg-blue-50' : 'border-border'
                   }`}
                   onClick={() => setDonationType('GENERAL_SEEDBANK')}
                 >
@@ -226,9 +248,9 @@ export const SowPage = () => {
                       checked={donationType === 'GENERAL_SEEDBANK'} 
                       onChange={() => setDonationType('GENERAL_SEEDBANK')}
                     />
-                    <span className="font-medium">General SeedBank</span>
+                    <span className="font-medium">Banco de Sementes Geral</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">1:0.8 conversion • 20% auto-pollination</p>
+                  <p className="text-sm text-muted-foreground">Conversão 1:0.8 • 20% auto-polinização</p>
                 </div>
               </div>
             </CardContent>
@@ -240,11 +262,114 @@ export const SowPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Coins className="mr-2 h-5 w-5 text-yellow-500" />
-                Seed Conversion
+                Conversão de Sementes
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span>Conversion Rate:</span>
-                  <span className="font-medium">{conv
+                  <span>Taxa de Conversão:</span>
+                  <span className="font-medium">{conversionInfo.rate}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Auto-polinização:</span>
+                  <span className="font-medium">{conversionInfo.autopollination}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {conversionInfo.description}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Detalhes da Doação</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleDonation} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="amount">Valor (R$)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      value={donationData.amount}
+                      onChange={(e) => setDonationData(prev => ({ ...prev, amount: e.target.value }))}
+                      placeholder="100.00"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="currency">Moeda</Label>
+                    <select
+                      id="currency"
+                      value={donationData.currency}
+                      onChange={(e) => setDonationData(prev => ({ ...prev, currency: e.target.value }))}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                    >
+                      <option value="BRL">Real (BRL)</option>
+                      <option value="USD">Dólar (USD)</option>
+                      <option value="EUR">Euro (EUR)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="donor_name">Seu Nome</Label>
+                  <Input
+                    id="donor_name"
+                    value={donationData.donor_name}
+                    onChange={(e) => setDonationData(prev => ({ ...prev, donor_name: e.target.value }))}
+                    placeholder="Nome completo"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="donor_email">Seu Email</Label>
+                  <Input
+                    id="donor_email"
+                    type="email"
+                    value={donationData.donor_email}
+                    onChange={(e) => setDonationData(prev => ({ ...prev, donor_email: e.target.value }))}
+                    placeholder="email@exemplo.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="message">Mensagem (opcional)</Label>
+                  <textarea
+                    id="message"
+                    value={donationData.message}
+                    onChange={(e) => setDonationData(prev => ({ ...prev, message: e.target.value }))}
+                    placeholder="Deixe uma mensagem de apoio..."
+                    className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+
+                {donationData.amount && (
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center">
+                      <Zap className="mr-2 h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800">
+                        R$ {donationData.amount} = {(parseFloat(donationData.amount || '0') * conversionInfo.rate.split(':')[1] / conversionInfo.rate.split(':')[0]).toFixed(1)} Sementes
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full phase-celebrate border-0">
+                  <Heart className="mr-2 h-4 w-4" />
+                  Plantar Sementes
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -29,6 +29,12 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    
+    /* Mandala Raiz Phase Colors */
+    --mandala-dream: 0 75% 60%;      /* Red for DREAM */
+    --mandala-plan: 45 95% 55%;      /* Yellow for PLAN */
+    --mandala-act: 210 75% 60%;      /* Blue for ACT */
+    --mandala-celebrate: 120 75% 60%; /* Green for CELEBRATE */
   }
   .dark {
     --background: 0 0% 0%;
@@ -57,6 +63,7 @@
     --chart-5: 340 75% 55%;
   }
 }
+
 @layer base {
   * {
     @apply border-border;
@@ -64,4 +71,66 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Mandala Raiz Phase Color Classes */
+.phase-dream {
+  background-color: hsl(var(--mandala-dream));
+  color: white;
+}
+
+.phase-plan {
+  background-color: hsl(var(--mandala-plan));
+  color: black;
+}
+
+.phase-act {
+  background-color: hsl(var(--mandala-act));
+  color: white;
+}
+
+.phase-celebrate {
+  background-color: hsl(var(--mandala-celebrate));
+  color: white;
+}
+
+.border-phase-dream {
+  border-color: hsl(var(--mandala-dream));
+}
+
+.border-phase-plan {
+  border-color: hsl(var(--mandala-plan));
+}
+
+.border-phase-act {
+  border-color: hsl(var(--mandala-act));
+}
+
+.border-phase-celebrate {
+  border-color: hsl(var(--mandala-celebrate));
+}
+
+.text-phase-dream {
+  color: hsl(var(--mandala-dream));
+}
+
+.text-phase-plan {
+  color: hsl(var(--mandala-plan));
+}
+
+.text-phase-act {
+  color: hsl(var(--mandala-act));
+}
+
+.text-phase-celebrate {
+  color: hsl(var(--mandala-celebrate));
+}
+
+/* Google Maps styling */
+.gm-style-iw {
+  color: black;
+}
+
+.gm-style-iw-d {
+  overflow: hidden !important;
 }

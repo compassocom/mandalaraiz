@@ -4,6 +4,7 @@ import { HomePage } from './pages/HomePage';
 import { DreamPage } from './pages/DreamPage';
 import { CreateDreamPage } from './pages/CreateDreamPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { SowPage } from './pages/SowPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/create-dream" element={<CreateDreamPage />} />
           <Route path="/dream/:id" element={<DreamPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/sow/:linkId" element={<SowPage />} />
         </Routes>
       </div>
     </Router>
