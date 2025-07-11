@@ -20,22 +20,22 @@ export const HomePage = () => {
         {/* Phase Flow */}
         <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 mb-8">
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 rounded-full phase-dream"></div>
+            <div className="w-3 h-3 rounded-full bg-phase-dream"></div>
             <span className="text-xs md:text-sm font-medium text-phase-dream">SONHAR</span>
           </div>
           <span className="text-muted-foreground hidden md:inline">→</span>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 rounded-full phase-plan"></div>
+            <div className="w-3 h-3 rounded-full bg-phase-plan"></div>
             <span className="text-xs md:text-sm font-medium text-phase-plan">PLANEJAR</span>
           </div>
           <span className="text-muted-foreground hidden md:inline">→</span>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 rounded-full phase-act"></div>
+            <div className="w-3 h-3 rounded-full bg-phase-act"></div>
             <span className="text-xs md:text-sm font-medium text-phase-act">AGIR</span>
           </div>
           <span className="text-muted-foreground hidden md:inline">→</span>
           <div className="flex items-center space-x-1">
-            <div className="w-3 h-3 rounded-full phase-celebrate"></div>
+            <div className="w-3 h-3 rounded-full bg-phase-celebrate"></div>
             <span className="text-xs md:text-sm font-medium text-phase-celebrate">CELEBRAR</span>
           </div>
         </div>
@@ -43,19 +43,19 @@ export const HomePage = () => {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/create-dream">
-            <Button size="lg" className="phase-dream border-0 w-full sm:w-auto">
+            <Button size="lg" className="bg-phase-dream border-0 w-full sm:w-auto">
               <Lightbulb className="mr-2 h-4 w-4" />
               Iniciar um Sonho
             </Button>
           </Link>
           <Link to="/dashboard">
-            <Button variant="outline" size="lg" className="border-phase-act text-phase-act hover:phase-act hover:text-white w-full sm:w-auto">
+            <Button variant="outline" size="lg" className="border-phase-act text-phase-act hover:bg-phase-act hover:text-white w-full sm:w-auto">
               <Users className="mr-2 h-4 w-4" />
               Explorar Sonhos
             </Button>
           </Link>
           <Link to="/marketplace">
-            <Button variant="outline" size="lg" className="border-phase-celebrate text-phase-celebrate hover:phase-celebrate hover:text-white w-full sm:w-auto">
+            <Button variant="outline" size="lg" className="border-phase-celebrate text-phase-celebrate hover:bg-phase-celebrate hover:text-white w-full sm:w-auto">
               <ShoppingBag className="mr-2 h-4 w-4" />
               Marketplace
             </Button>
@@ -227,28 +227,28 @@ export const HomePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
-              <div className="phase-dream rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">1</div>
+              <div className="bg-phase-dream rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">1</div>
               <div>
                 <h3 className="font-semibold text-phase-dream">Sonhar</h3>
                 <p className="text-sm text-muted-foreground">Compartilhe sua visão com raio de visibilidade ajustável</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="phase-plan rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">2</div>
+              <div className="bg-phase-plan rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">2</div>
               <div>
                 <h3 className="font-semibold text-phase-plan">Planejar</h3>
                 <p className="text-sm text-muted-foreground">Colabore em tarefas com limite de ativação de 3 pessoas</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="phase-act rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">3</div>
+              <div className="bg-phase-act rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">3</div>
               <div>
                 <h3 className="font-semibold text-phase-act">Agir</h3>
                 <p className="text-sm text-muted-foreground">Execute com painel de energia e economia de sementes</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="phase-celebrate rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">4</div>
+              <div className="bg-phase-celebrate rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">4</div>
               <div>
                 <h3 className="font-semibold text-phase-celebrate">Celebrar</h3>
                 <p className="text-sm text-muted-foreground">Compartilhe impacto e auto-polinize projetos próximos</p>

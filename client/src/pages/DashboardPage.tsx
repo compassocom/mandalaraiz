@@ -65,10 +65,10 @@ export const DashboardPage = () => {
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'DREAM': return 'phase-dream';
-      case 'PLAN': return 'phase-plan';
-      case 'ACT': return 'phase-act';
-      case 'CELEBRATE': return 'phase-celebrate';
+      case 'DREAM': return 'bg-phase-dream';
+      case 'PLAN': return 'bg-phase-plan';
+      case 'ACT': return 'bg-phase-act';
+      case 'CELEBRATE': return 'bg-phase-celebrate';
       default: return 'bg-gray-500';
     }
   };
@@ -139,7 +139,7 @@ export const DashboardPage = () => {
               Mapa
             </Button>
             <Link to="/create-dream">
-              <Button className="phase-dream border-0">
+              <Button className="bg-phase-dream border-0">
                 <Plus className="mr-2 h-4 w-4" />
                 Criar Sonho
               </Button>
@@ -192,7 +192,7 @@ export const DashboardPage = () => {
       {viewMode === 'grid' && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dreams.map((dream) => (
-            <Card key={dream.id} className={`cursor-pointer hover:shadow-lg transition-shadow border-2 border-${getPhaseColor(dream.phase).replace('phase-', 'phase-')}`}>
+            <Card key={dream.id} className={`cursor-pointer hover:shadow-lg transition-shadow border-2 border-phase-${dream.phase.toLowerCase()}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -228,7 +228,7 @@ export const DashboardPage = () => {
                     <span>Até {dream.participant_limit} participantes</span>
                   </div>
                   <Link to={`/dream/${dream.id}`}>
-                    <Button variant="outline" size="sm" className={`border-${getPhaseColor(dream.phase).replace('phase-', 'phase-')} text-${getPhaseColor(dream.phase).replace('phase-', 'phase-')} hover:${getPhaseColor(dream.phase)} hover:text-white`}>
+                    <Button variant="outline" size="sm" className={`border-phase-${dream.phase.toLowerCase()} text-phase-${dream.phase.toLowerCase()} hover:${getPhaseColor(dream.phase)} hover:text-white`}>
                       Ver Detalhes
                     </Button>
                   </Link>
@@ -249,7 +249,7 @@ export const DashboardPage = () => {
           </CardHeader>
           <CardContent>
             <Link to="/create-dream">
-              <Button className="phase-dream border-0">
+              <Button className="bg-phase-dream border-0">
                 <Plus className="mr-2 h-4 w-4" />
                 Criar o Primeiro Sonho
               </Button>

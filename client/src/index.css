@@ -74,22 +74,22 @@
 }
 
 /* Mandala Raiz Phase Color Classes */
-.phase-dream {
+.bg-phase-dream {
   background-color: hsl(var(--mandala-dream));
   color: white;
 }
 
-.phase-plan {
+.bg-phase-plan {
   background-color: hsl(var(--mandala-plan));
   color: black;
 }
 
-.phase-act {
+.bg-phase-act {
   background-color: hsl(var(--mandala-act));
   color: white;
 }
 
-.phase-celebrate {
+.bg-phase-celebrate {
   background-color: hsl(var(--mandala-celebrate));
   color: white;
 }
@@ -124,6 +124,26 @@
 
 .text-phase-celebrate {
   color: hsl(var(--mandala-celebrate));
+}
+
+.hover\:bg-phase-dream:hover {
+  background-color: hsl(var(--mandala-dream));
+  color: white;
+}
+
+.hover\:bg-phase-plan:hover {
+  background-color: hsl(var(--mandala-plan));
+  color: black;
+}
+
+.hover\:bg-phase-act:hover {
+  background-color: hsl(var(--mandala-act));
+  color: white;
+}
+
+.hover\:bg-phase-celebrate:hover {
+  background-color: hsl(var(--mandala-celebrate));
+  color: white;
 }
 
 /* Google Maps styling */

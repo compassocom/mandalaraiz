@@ -168,7 +168,7 @@ export const CreateDreamPage = () => {
                     type="button"
                     variant="outline"
                     onClick={handleGetLocation}
-                    className="w-full border-phase-act text-phase-act hover:phase-act hover:text-white"
+                    className="w-full border-phase-act text-phase-act hover:bg-phase-act hover:text-white"
                   >
                     <MapPin className="mr-2 h-4 w-4" />
                     Obter Localização Atual
@@ -193,7 +193,7 @@ export const CreateDreamPage = () => {
                 <Button
                   type="submit"
                   disabled={isSubmitting || formData.location_lat === 0}
-                  className="flex-1 phase-dream border-0"
+                  className="flex-1 bg-phase-dream border-0"
                 >
                   {isSubmitting ? 'Criando...' : 'Criar Sonho'}
                 </Button>

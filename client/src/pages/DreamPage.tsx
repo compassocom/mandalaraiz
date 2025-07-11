@@ -58,10 +58,10 @@ export const DreamPage = () => {
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'DREAM': return 'phase-dream';
-      case 'PLAN': return 'phase-plan';
-      case 'ACT': return 'phase-act';
-      case 'CELEBRATE': return 'phase-celebrate';
+      case 'DREAM': return 'bg-phase-dream';
+      case 'PLAN': return 'bg-phase-plan';
+      case 'ACT': return 'bg-phase-act';
+      case 'CELEBRATE': return 'bg-phase-celebrate';
       default: return 'bg-gray-500';
     }
   };

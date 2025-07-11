@@ -190,7 +190,7 @@ export const MarketplacePage = () => {
           
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
-              <Button className="phase-celebrate border-0">
+              <Button className="bg-phase-celebrate border-0">
                 <Plus className="mr-2 h-4 w-4" />
                 Criar Anúncio
               </Button>
@@ -352,7 +352,7 @@ export const MarketplacePage = () => {
 
                 {/* Purchase Button */}
                 <Button 
-                  className="w-full phase-act border-0"
+                  className="w-full bg-phase-act border-0"
                   onClick={() => handlePurchase(listing.id, listing.price_seeds)}
                 >
                   Comprar com Seeds
@@ -373,7 +373,7 @@ export const MarketplacePage = () => {
                 ? 'Tente ajustar seus filtros de busca' 
                 : 'Seja o primeiro a criar um anúncio!'}
             </p>
-            <Button onClick={() => setShowCreateDialog(true)} className="phase-celebrate border-0">
+            <Button onClick={() => setShowCreateDialog(true)} className="bg-phase-celebrate border-0">
               <Plus className="mr-2 h-4 w-4" />
               Criar Primeiro Anúncio
             </Button>

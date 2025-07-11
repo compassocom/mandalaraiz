@@ -77,10 +77,10 @@ export const SowPage = () => {
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'DREAM': return 'phase-dream';
-      case 'PLAN': return 'phase-plan';
-      case 'ACT': return 'phase-act';
-      case 'CELEBRATE': return 'phase-celebrate';
+      case 'DREAM': return 'bg-phase-dream';
+      case 'PLAN': return 'bg-phase-plan';
+      case 'ACT': return 'bg-phase-act';
+      case 'CELEBRATE': return 'bg-phase-celebrate';
       default: return 'bg-gray-500';
     }
   };
@@ -174,7 +174,7 @@ export const SowPage = () => {
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="space-y-6">
           {dream && (
-            <Card className={`border-2 border-${getPhaseColor(dream.phase).replace('phase-', 'phase-')}`}>
+            <Card className={`border-2 border-phase-${dream.phase.toLowerCase()}`}>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Heart className="mr-2 h-5 w-5 text-red-500" />
@@ -355,13 +355,13 @@ export const SowPage = () => {
                     <div className="flex items-center">
                       <Zap className="mr-2 h-4 w-4 text-green-600" />
                       <span className="font-medium text-green-800">
-                        R$ {donationData.amount} = {(parseFloat(donationData.amount || '0') * conversionInfo.rate.split(':')[1] / conversionInfo.rate.split(':')[0]).toFixed(1)} Sementes
+                        R$ {donationData.amount} = {(parseFloat(donationData.amount || '0') * parseFloat(conversionInfo.rate.split(':')[1]) / parseFloat(conversionInfo.rate.split(':')[0])).toFixed(1)} Sementes
                       </span>
                     </div>
                   </div>
                 )}
 
-                <Button type="submit" className="w-full phase-celebrate border-0">
+                <Button type="submit" className="w-full bg-phase-celebrate border-0">
                   <Heart className="mr-2 h-4 w-4" />
                   Plantar Sementes
                 </Button>
