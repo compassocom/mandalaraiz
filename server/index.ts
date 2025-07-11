@@ -12,6 +12,14 @@ import { LocalizationService } from './services/localizationService.js';
 
 dotenv.config();
 
+declare global {
+  namespace Express {
+    interface Request {
+      detectedLanguage?: string;
+    }
+  }
+}
+
 const app = express();
 const dreamService = new DreamService();
 const seedService = new SeedService();
@@ -48,7 +56,7 @@ app.use('/api/*', (req, res, next) => {
 // Localization endpoints
 app.get('/api/detect-language', async (req, res) => {
   try {
-    const ipAddress = req.ip || req.connection.remoteAddress || '127.0.0.1';
+    const ipAddress = req.ip || req.socket?.remoteAddress || '127.0.0.1';
     const detectedLanguage = await localizationService.detectLanguageFromIP(ipAddress);
     
     res.json({
@@ -401,7 +409,7 @@ app.post('/api/donations', async (req, res) => {
   }
 });
 
-// Static file serving and catch-all
+// Static file serving and catch-all (only in production)
 if (process.env.NODE_ENV === 'production') {
   setupStaticServing(app);
 }
