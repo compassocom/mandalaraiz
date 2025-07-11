@@ -45,7 +45,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Language detection middleware
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Language detection middleware - only for API routes
 app.use('/api/*', (req, res, next) => {
   const acceptLanguage = req.headers['accept-language'] || 'en-US';
   const preferredLanguage = acceptLanguage.split(',')[0] || 'en-US';
@@ -73,6 +78,11 @@ app.get('/api/detect-language', async (req, res) => {
 app.get('/api/users/:id/tokens', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      res.status(400).json({ error: 'Invalid user ID' });
+      return;
+    }
+    
     const tokens = await tokenService.getUserTokens(userId);
     res.json(tokens);
   } catch (error) {
@@ -84,7 +94,16 @@ app.get('/api/users/:id/tokens', async (req, res) => {
 app.post('/api/users/:id/award-seeds', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      res.status(400).json({ error: 'Invalid user ID' });
+      return;
+    }
+    
     const { amount, description } = req.body;
+    if (!amount || !description) {
+      res.status(400).json({ error: 'Amount and description are required' });
+      return;
+    }
     
     const success = await tokenService.awardSeeds(userId, amount, description);
     if (success) {
@@ -98,52 +117,200 @@ app.post('/api/users/:id/award-seeds', async (req, res) => {
   }
 });
 
-app.post('/api/users/:id/convert-seeds', async (req, res) => {
+// Dreams endpoints
+app.get('/api/dreams/nearby', async (req, res) => {
   try {
-    const userId = parseInt(req.params.id);
-    const { seeds_amount } = req.body;
+    const lat = parseFloat(req.query.lat as string);
+    const lng = parseFloat(req.query.lng as string);
+    const radius = parseInt(req.query.radius as string) || 2000;
     
-    const result = await tokenService.convertSeedsToRoots(userId, seeds_amount);
-    res.json(result);
+    if (isNaN(lat) || isNaN(lng)) {
+      res.status(400).json({ error: 'Valid latitude and longitude are required' });
+      return;
+    }
+    
+    const dreams = await dreamService.findNearbyDreams(lat, lng, radius);
+    res.json(dreams);
   } catch (error) {
-    console.error('Error converting seeds:', error);
-    res.status(500).json({ error: 'Failed to convert seeds' });
+    console.error('Error fetching nearby dreams:', error);
+    res.status(500).json({ error: 'Failed to fetch nearby dreams' });
   }
 });
 
-app.post('/api/users/:id/transfer-seeds', async (req, res) => {
+app.post('/api/dreams', async (req, res) => {
   try {
-    const fromUserId = parseInt(req.params.id);
-    const { to_user_id, amount, description } = req.body;
+    const { tags, ...dreamData } = req.body;
     
-    const result = await tokenService.transferSeeds(fromUserId, to_user_id, amount, description);
-    res.json(result);
+    // Validate required fields
+    if (!dreamData.title || !dreamData.description || !dreamData.user_id) {
+      res.status(400).json({ error: 'Title, description, and user_id are required' });
+      return;
+    }
+    
+    const dream = await dreamService.createDream(dreamData, tags || []);
+    res.json(dream);
   } catch (error) {
-    console.error('Error transferring seeds:', error);
-    res.status(500).json({ error: 'Failed to transfer seeds' });
+    console.error('Error creating dream:', error);
+    res.status(500).json({ error: 'Failed to create dream' });
   }
 });
 
-app.get('/api/users/:id/transaction-history', async (req, res) => {
+app.get('/api/dreams/:id', async (req, res) => {
+  try {
+    const dreamId = parseInt(req.params.id);
+    if (isNaN(dreamId)) {
+      res.status(400).json({ error: 'Invalid dream ID' });
+      return;
+    }
+    
+    const dream = await dreamService.getDreamDetails(dreamId);
+    
+    if (!dream) {
+      res.status(404).json({ error: 'Dream not found' });
+      return;
+    }
+    
+    res.json(dream);
+  } catch (error) {
+    console.error('Error fetching dream:', error);
+    res.status(500).json({ error: 'Failed to fetch dream' });
+  }
+});
+
+// Tasks endpoints
+app.get('/api/dreams/:id/tasks', async (req, res) => {
+  try {
+    const dreamId = parseInt(req.params.id);
+    if (isNaN(dreamId)) {
+      res.status(400).json({ error: 'Invalid dream ID' });
+      return;
+    }
+    
+    const tasks = await db
+      .selectFrom('tasks')
+      .selectAll()
+      .where('dream_id', '=', dreamId)
+      .orderBy('created_at', 'desc')
+      .execute();
+    
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+});
+
+app.post('/api/tasks', async (req, res) => {
+  try {
+    const { dream_id, creator_id, title } = req.body;
+    
+    if (!dream_id || !creator_id || !title) {
+      res.status(400).json({ error: 'dream_id, creator_id, and title are required' });
+      return;
+    }
+    
+    const task = await db
+      .insertInto('tasks')
+      .values({
+        ...req.body,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
+      .executeTakeFirstOrThrow();
+    
+    res.json(task);
+  } catch (error) {
+    console.error('Error creating task:', error);
+    res.status(500).json({ error: 'Failed to create task' });
+  }
+});
+
+app.put('/api/tasks/:id', async (req, res) => {
+  try {
+    const taskId = parseInt(req.params.id);
+    if (isNaN(taskId)) {
+      res.status(400).json({ error: 'Invalid task ID' });
+      return;
+    }
+    
+    const updatedTask = await db
+      .updateTable('tasks')
+      .set({
+        ...req.body,
+        updated_at: new Date().toISOString(),
+      })
+      .where('id', '=', taskId)
+      .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
+      .executeTakeFirstOrThrow();
+    
+    res.json(updatedTask);
+  } catch (error) {
+    console.error('Error updating task:', error);
+    res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+// Energy endpoints
+app.get('/api/dreams/:id/energy', async (req, res) => {
+  try {
+    const dreamId = parseInt(req.params.id);
+    if (isNaN(dreamId)) {
+      res.status(400).json({ error: 'Invalid dream ID' });
+      return;
+    }
+    
+    const energy = await energyService.getCurrentEnergyStatus(dreamId);
+    
+    const result = {
+      ...energy,
+      health_status: energyService.getHealthStatus(energy.health_score)
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching energy status:', error);
+    res.status(500).json({ error: 'Failed to fetch energy status' });
+  }
+});
+
+// Seed wallet endpoints
+app.get('/api/users/:id/wallet', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      res.status(400).json({ error: 'Invalid user ID' });
+      return;
+    }
+    
+    let wallet = await seedService.getWalletBalance(userId);
+    
+    if (!wallet) {
+      wallet = await seedService.initializeWallet(userId);
+    }
+    
+    res.json(wallet);
+  } catch (error) {
+    console.error('Error fetching wallet:', error);
+    res.status(500).json({ error: 'Failed to fetch wallet' });
+  }
+});
+
+app.get('/api/users/:id/transactions', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      res.status(400).json({ error: 'Invalid user ID' });
+      return;
+    }
+    
     const limit = parseInt(req.query.limit as string) || 50;
     
-    const transactions = await tokenService.getUserTransactionHistory(userId, limit);
+    const transactions = await seedService.getTransactionHistory(userId, limit);
     res.json(transactions);
   } catch (error) {
-    console.error('Error fetching transaction history:', error);
-    res.status(500).json({ error: 'Failed to fetch transaction history' });
-  }
-});
-
-app.get('/api/token-statistics', async (req, res) => {
-  try {
-    const statistics = await tokenService.getTokenStatistics();
-    res.json(statistics);
-  } catch (error) {
-    console.error('Error fetching token statistics:', error);
-    res.status(500).json({ error: 'Failed to fetch token statistics' });
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
   }
 });
 
@@ -167,6 +334,13 @@ app.get('/api/marketplace/listings', async (req, res) => {
 
 app.post('/api/marketplace/listings', async (req, res) => {
   try {
+    const { seller_id, title, description, price_seeds } = req.body;
+    
+    if (!seller_id || !title || !description || !price_seeds) {
+      res.status(400).json({ error: 'seller_id, title, description, and price_seeds are required' });
+      return;
+    }
+    
     const listing = await marketplaceService.createListing(req.body);
     res.json(listing);
   } catch (error) {
@@ -175,201 +349,17 @@ app.post('/api/marketplace/listings', async (req, res) => {
   }
 });
 
-app.get('/api/marketplace/listings/:id', async (req, res) => {
-  try {
-    const listingId = parseInt(req.params.id);
-    const listing = await marketplaceService.getListingDetails(listingId);
-    
-    if (!listing) {
-      res.status(404).json({ error: 'Listing not found' });
-      return;
-    }
-    
-    res.json(listing);
-  } catch (error) {
-    console.error('Error fetching marketplace listing:', error);
-    res.status(500).json({ error: 'Failed to fetch marketplace listing' });
-  }
-});
-
-app.post('/api/marketplace/purchase/:id', async (req, res) => {
-  try {
-    const listingId = parseInt(req.params.id);
-    const { buyer_id } = req.body;
-    
-    const result = await marketplaceService.purchaseItem(listingId, buyer_id);
-    res.json(result);
-  } catch (error) {
-    console.error('Error purchasing marketplace item:', error);
-    res.status(500).json({ error: 'Failed to purchase marketplace item' });
-  }
-});
-
-app.get('/api/users/:id/marketplace-history', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    const history = await marketplaceService.getUserMarketplaceHistory(userId);
-    res.json(history);
-  } catch (error) {
-    console.error('Error fetching marketplace history:', error);
-    res.status(500).json({ error: 'Failed to fetch marketplace history' });
-  }
-});
-
-// Dreams endpoints
-app.get('/api/dreams/nearby', async (req, res) => {
-  try {
-    const lat = parseFloat(req.query.lat as string);
-    const lng = parseFloat(req.query.lng as string);
-    const radius = parseInt(req.query.radius as string) || 2000;
-    
-    const dreams = await dreamService.findNearbyDreams(lat, lng, radius);
-    res.json(dreams);
-  } catch (error) {
-    console.error('Error fetching nearby dreams:', error);
-    res.status(500).json({ error: 'Failed to fetch nearby dreams' });
-  }
-});
-
-app.post('/api/dreams', async (req, res) => {
-  try {
-    const { tags, ...dreamData } = req.body;
-    const dream = await dreamService.createDream(dreamData, tags || []);
-    res.json(dream);
-  } catch (error) {
-    console.error('Error creating dream:', error);
-    res.status(500).json({ error: 'Failed to create dream' });
-  }
-});
-
-app.get('/api/dreams/:id', async (req, res) => {
-  try {
-    const dreamId = parseInt(req.params.id);
-    const dream = await dreamService.getDreamDetails(dreamId);
-    
-    if (!dream) {
-      res.status(404).json({ error: 'Dream not found' });
-      return;
-    }
-    
-    res.json(dream);
-  } catch (error) {
-    console.error('Error fetching dream:', error);
-    res.status(500).json({ error: 'Failed to fetch dream' });
-  }
-});
-
-// Tasks endpoints
-app.get('/api/dreams/:id/tasks', async (req, res) => {
-  try {
-    const dreamId = parseInt(req.params.id);
-    const tasks = await db
-      .selectFrom('tasks')
-      .selectAll()
-      .where('dream_id', '=', dreamId)
-      .orderBy('created_at', 'desc')
-      .execute();
-    
-    res.json(tasks);
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
-  }
-});
-
-app.post('/api/tasks', async (req, res) => {
-  try {
-    const task = await db
-      .insertInto('tasks')
-      .values({
-        ...req.body,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
-      .executeTakeFirstOrThrow();
-    
-    res.json(task);
-  } catch (error) {
-    console.error('Error creating task:', error);
-    res.status(500).json({ error: 'Failed to create task' });
-  }
-});
-
-app.put('/api/tasks/:id', async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.id);
-    const updatedTask = await db
-      .updateTable('tasks')
-      .set({
-        ...req.body,
-        updated_at: new Date().toISOString(),
-      })
-      .where('id', '=', taskId)
-      .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
-      .executeTakeFirstOrThrow();
-    
-    res.json(updatedTask);
-  } catch (error) {
-    console.error('Error updating task:', error);
-    res.status(500).json({ error: 'Failed to update task' });
-  }
-});
-
-// Energy endpoints
-app.get('/api/dreams/:id/energy', async (req, res) => {
-  try {
-    const dreamId = parseInt(req.params.id);
-    const energy = await energyService.getCurrentEnergyStatus(dreamId);
-    
-    const result = {
-      ...energy,
-      health_status: energyService.getHealthStatus(energy.health_score)
-    };
-    
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching energy status:', error);
-    res.status(500).json({ error: 'Failed to fetch energy status' });
-  }
-});
-
-// Seed wallet endpoints
-app.get('/api/users/:id/wallet', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    const wallet = await seedService.getWalletBalance(userId);
-    
-    if (!wallet) {
-      const newWallet = await seedService.initializeWallet(userId);
-      res.json(newWallet);
-      return;
-    }
-    
-    res.json(wallet);
-  } catch (error) {
-    console.error('Error fetching wallet:', error);
-    res.status(500).json({ error: 'Failed to fetch wallet' });
-  }
-});
-
-app.get('/api/users/:id/transactions', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    const limit = parseInt(req.query.limit as string) || 50;
-    
-    const transactions = await seedService.getTransactionHistory(userId, limit);
-    res.json(transactions);
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
-  }
-});
-
 // Donation endpoints
 app.post('/api/donors', async (req, res) => {
   try {
-    const { email, name, preferred_currency } = req.body;
+    const { email, name } = req.body;
+    
+    if (!email || !name) {
+      res.status(400).json({ error: 'Email and name are required' });
+      return;
+    }
+    
+    const preferred_currency = req.body.preferred_currency || 'USD';
     const donor = await donationService.registerDonor(email, name, preferred_currency);
     res.json(donor);
   } catch (error) {
@@ -384,22 +374,23 @@ app.post('/api/donations', async (req, res) => {
       donor_id,
       amount,
       currency,
-      donation_type,
-      target_dream_id,
-      target_category,
-      donor_message,
-      payment_reference
+      donation_type
     } = req.body;
+    
+    if (!donor_id || !amount || !currency || !donation_type) {
+      res.status(400).json({ error: 'donor_id, amount, currency, and donation_type are required' });
+      return;
+    }
     
     const donation = await donationService.processDonation(
       donor_id,
       amount,
       currency,
       donation_type,
-      target_dream_id,
-      target_category,
-      donor_message,
-      payment_reference
+      req.body.target_dream_id,
+      req.body.target_category,
+      req.body.donor_message,
+      req.body.payment_reference
     );
     
     res.json(donation);
@@ -407,6 +398,12 @@ app.post('/api/donations', async (req, res) => {
     console.error('Error processing donation:', error);
     res.status(500).json({ error: 'Failed to process donation' });
   }
+});
+
+// Error handling middleware
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled error:', error);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Static file serving and catch-all (only in production)
@@ -421,6 +418,8 @@ export const startServer = async (port = PORT) => {
     try {
       const server = app.listen(port, () => {
         console.log(`Server running on port ${port}`);
+        console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`Data directory: ${process.env.DATA_DIRECTORY || './data'}`);
         resolve();
       });
       

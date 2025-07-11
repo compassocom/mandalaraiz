@@ -2,71 +2,51 @@ import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, HelpCircle, Sprout, Shield, Users, Code } from 'lucide-react';
+import { ArrowLeft, HelpCircle } from 'lucide-react';
 
 export const RegenerativeFAQPage = () => {
   const navigate = useNavigate();
 
-  const faqSections = [
+  const faqs = [
     {
-      title: "Sobre a Plataforma",
-      icon: <Sprout className="h-5 w-5" />,
-      color: "phase-dream",
-      questions: [
-        {
-          q: "Como isso é diferente de outros aplicativos de projetos?",
-          a: "Mandala Raiz é uma ferramenta ritual, não um aplicativo de produtividade. Medimos sucesso em 'relacionamentos curados' e 'árvores plantadas', não em curtidas ou velocidade."
-        },
-        {
-          q: "Posso sacar a Moeda Sementes?",
-          a: "Não. Sementes são créditos não-monetários para financiar outros sonhos. Pense nelas como 'pedras de agradecimento'."
-        }
-      ]
+      question: "O que é economia regenerativa?",
+      answer: "Economia regenerativa é um sistema econômico que visa restaurar e revitalizar comunidades e ecossistemas, em vez de apenas sustentá-los. No Mandala Raiz, isso se manifesta através do sistema Seeds & Roots, onde a participação gera valor real e os lucros são redistribuídos para fortalecer a comunidade."
     },
     {
-      title: "Privacidade & Segurança",
-      icon: <Shield className="h-5 w-5" />,
-      color: "phase-plan",
-      questions: [
-        {
-          q: "Quem pode ver meus sonhos?",
-          a: "Apenas usuários dentro do seu raio escolhido (200m-2km). Você pode alternar o anonimato a qualquer momento."
-        },
-        {
-          q: "E se alguém usar mal a plataforma?",
-          a: "Comunidades se auto-governam através de 'Círculos do Dragão' que votam em remoções (veja Código de Conduta)."
-        }
-      ]
+      question: "Como funcionam as Seeds e Roots?",
+      answer: "Seeds são moedas de participação que você ganha colaborando na plataforma. Roots são moedas de valor real que podem ser convertidas em dinheiro. A cada transação, 10% das Seeds são 'queimadas' para prevenir inflação, e parte dos lucros é redistribuída automaticamente para projetos próximos (auto-polinização)."
     },
     {
-      title: "Dragon Dreaming",
-      icon: <Users className="h-5 w-5" />,
-      color: "phase-act",
-      questions: [
-        {
-          q: "Por que exigir 3 territórios para iniciar um sonho?",
-          a: "Diversidade previne câmaras de eco! Tecer perspectivas diferentes é fundamental para projetos regenerativos."
-        },
-        {
-          q: "Como o esgotamento é prevenido?",
-          a: "O Painel de Energia sinaliza desequilíbrios (ex: 'Maria fez 80% das tarefas'), e as tarefas têm limites rígidos."
-        }
-      ]
+      question: "O que é auto-polinização?",
+      answer: "Auto-polinização é o mecanismo pelo qual 10% dos lucros de projetos bem-sucedidos são automaticamente redistribuídos para outros projetos em um raio de 2km. Isso garante que o sucesso de um projeto beneficie toda a comunidade local."
     },
     {
-      title: "Técnico",
-      icon: <Code className="h-5 w-5" />,
-      color: "phase-celebrate",
-      questions: [
-        {
-          q: "Meus dados são vendidos para anunciantes?",
-          a: "Nunca. Rejeitamos o capitalismo de vigilância. Suas habilidades/localização existem apenas para conectar sonhadores."
-        },
-        {
-          q: "Como posso auditar os algoritmos?",
-          a: "Todo código é open-source. Nossa página 'Bosque da Transparência' explica sistemas-chave em linguagem simples."
-        }
-      ]
+      question: "Como a localização influencia a plataforma?",
+      answer: "A plataforma é geolocada, permitindo descobrir sonhos e projetos em um raio de 200m a 2km. Isso fortalece conexões locais e facilita colaborações presenciais, criando verdadeiras redes comunitárias."
+    },
+    {
+      question: "O que são as fases dos sonhos?",
+      answer: "Todo sonho passa por 4 fases: SONHAR (compartilhar a visão), PLANEJAR (organizar tarefas), AGIR (executar o projeto) e CELEBRAR (compartilhar resultados). Cada fase tem ferramentas específicas para apoiar o desenvolvimento."
+    },
+    {
+      question: "Como funciona o limite de ativação?",
+      answer: "Projetos precisam de pelo menos 3 pessoas para serem ativados. Isso garante colaboração real e previne projetos individuais que não geram impacto comunitário."
+    },
+    {
+      question: "O que é o painel de energia?",
+      answer: "O painel de energia monitora a saúde de projetos através de métricas como colaboração, diversidade e progresso de tarefas. Funciona como um 'semáforo' indicando se um projeto está prosperando ou precisa de atenção."
+    },
+    {
+      question: "Como funciona o marketplace?",
+      answer: "No marketplace, você pode comprar e vender produtos/serviços usando Seeds. Há um sistema de reputação baseado em avaliações, e uma taxa de 5% apoia a manutenção da plataforma."
+    },
+    {
+      question: "Posso retirar dinheiro real?",
+      answer: "Sim! Você pode converter Seeds em Roots (100:1) e depois sacar Roots como dinheiro real. O saque mínimo é de 10.000 Roots (equivalente a $100) com uma taxa de 5%."
+    },
+    {
+      question: "A plataforma é segura?",
+      answer: "Sim, implementamos múltiplas camadas de segurança: limites diários de Seeds para prevenir farming, sistema de burn para controlar inflação, rate limiting para transações, e todas as operações são registradas para transparência."
     }
   ];
 
@@ -81,67 +61,50 @@ export const RegenerativeFAQPage = () => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar ao Início
         </Button>
-        <h1 className="text-3xl font-bold mb-2">Perguntas que Nutrem Sonhos</h1>
-        <p className="text-muted-foreground">
-          Respostas regenerativas para construir entendimento coletivo
-        </p>
+        <div className="flex items-center space-x-3">
+          <HelpCircle className="h-8 w-8 text-blue-500" />
+          <div>
+            <h1 className="text-3xl font-bold">FAQ Regenerativo</h1>
+            <p className="text-muted-foreground">
+              Perguntas frequentes sobre economia regenerativa e a plataforma
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-8">
-        {faqSections.map((section, sectionIndex) => (
-          <Card key={sectionIndex} className={`border-${section.color}`}>
+      <div className="space-y-4">
+        {faqs.map((faq, index) => (
+          <Card key={index}>
             <CardHeader>
-              <CardTitle className={`flex items-center text-${section.color}`}>
-                {section.icon}
-                <span className="ml-2">{section.title}</span>
-              </CardTitle>
+              <CardTitle className="text-lg">{faq.question}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {section.questions.map((faq, faqIndex) => (
-                  <div key={faqIndex} className="space-y-2">
-                    <div className="flex items-start space-x-3">
-                      <HelpCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-foreground">{faq.q}</h3>
-                        <p className="text-sm text-muted-foreground mt-2">{faq.a}</p>
-                      </div>
-                    </div>
-                    {faqIndex < section.questions.length - 1 && (
-                      <div className="border-b border-gray-100 my-4"></div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <p className="text-muted-foreground leading-relaxed">
+                {faq.answer}
+              </p>
             </CardContent>
           </Card>
         ))}
-
-        <Card className="bg-gradient-to-r from-blue-50 to-green-50">
-          <CardHeader>
-            <CardTitle className="text-center">Ainda tem perguntas?</CardTitle>
-            <CardDescription className="text-center">
-              Nossa comunidade está aqui para nutrir sua curiosidade
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center space-x-4">
-              <Button variant="outline">
-                💬 Círculo de Apoio
-              </Button>
-              <Button variant="outline">
-                📚 Manifesto Econômico
-              </Button>
-              <Button variant="outline">
-                🌳 Bosque da Transparência
-              </Button>
-            </div>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Resposta garantida em 48 horas com carinho da nossa comunidade
-            </p>
-          </CardContent>
-        </Card>
       </div>
+
+      <Card className="mt-8 bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-blue-800">Ainda tem dúvidas?</CardTitle>
+          <CardDescription>
+            Entre em contato conosco ou participe da comunidade
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
+              Contato: help@mandalaraiz.org
+            </Button>
+            <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
+              Comunidade Discord
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
