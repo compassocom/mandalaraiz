@@ -51,7 +51,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Language detection middleware - only for API routes
-app.use('/api/*', (req, res, next) => {
+app.use('/api/*splat', (req, res, next) => {
   const acceptLanguage = req.headers['accept-language'] || 'en-US';
   const preferredLanguage = acceptLanguage.split(',')[0] || 'en-US';
   req.detectedLanguage = preferredLanguage;
@@ -346,6 +346,33 @@ app.post('/api/marketplace/listings', async (req, res) => {
   } catch (error) {
     console.error('Error creating marketplace listing:', error);
     res.status(500).json({ error: 'Failed to create marketplace listing' });
+  }
+});
+
+app.post('/api/marketplace/purchase/:id', async (req, res) => {
+  try {
+    const listingId = parseInt(req.params.id);
+    if (isNaN(listingId)) {
+      res.status(400).json({ error: 'Invalid listing ID' });
+      return;
+    }
+    
+    const { buyer_id } = req.body;
+    if (!buyer_id) {
+      res.status(400).json({ error: 'buyer_id is required' });
+      return;
+    }
+    
+    const result = await marketplaceService.purchaseItem(listingId, buyer_id);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Error purchasing item:', error);
+    res.status(500).json({ error: 'Failed to purchase item' });
   }
 });
 
