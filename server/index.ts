@@ -6,6 +6,7 @@ import { DreamService } from './services/dreamService.js';
 import { EnergyService } from './services/energyService.js';
 import { MarketplaceService } from './services/marketplaceService.js';
 import { LocalizationService } from './services/localizationService.js';
+import authRoutes from './routes/auth.js';
 
 dotenv.config();
 
@@ -51,6 +52,9 @@ app.use('/api/*splat', (req, res, next) => {
   req.detectedLanguage = preferredLanguage;
   next();
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // Localization endpoints
 app.get('/api/detect-language', async (req, res) => {
