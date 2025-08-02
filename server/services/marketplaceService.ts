@@ -54,42 +54,40 @@ export class MarketplaceService {
 
     // Apply filters
     if (filters.category) {
-      query = query.where('marketplace_listings.category', '=', filters.category as any);
+      query = query.where('marketplace_listings.category', '=', filters.category);
     }
 
     if (filters.searchTerm) {
+      const searchTerm = `%${filters.searchTerm}%`;
       query = query.where(eb => 
         eb.or([
-          eb('marketplace_listings.title', 'like', `%${filters.searchTerm}%`),
-          eb('marketplace_listings.description', 'like', `%${filters.searchTerm}%`)
+          eb('marketplace_listings.title', 'like', searchTerm),
+          eb('marketplace_listings.description', 'like', searchTerm)
         ])
       );
     }
 
-    // Get total count with a separate query to avoid complex binding
-    let countQuery = db
+    // Get total count first
+    const countResult = await db
       .selectFrom('marketplace_listings')
       .select(eb => eb.fn.countAll().as('count'))
       .where('marketplace_listings.is_active', '=', true)
-      .where('marketplace_listings.is_approved', '=', true);
+      .where('marketplace_listings.is_approved', '=', true)
+      .$if(Boolean(filters.category), (qb) => 
+        qb.where('marketplace_listings.category', '=', filters.category!)
+      )
+      .$if(Boolean(filters.searchTerm), (qb) => {
+        const searchTerm = `%${filters.searchTerm}%`;
+        return qb.where(eb => 
+          eb.or([
+            eb('marketplace_listings.title', 'like', searchTerm),
+            eb('marketplace_listings.description', 'like', searchTerm)
+          ])
+        );
+      })
+      .executeTakeFirst();
 
-    // Apply same filters to count query
-    if (filters.category) {
-      countQuery = countQuery.where('marketplace_listings.category', '=', filters.category as any);
-    }
-
-    if (filters.searchTerm) {
-      countQuery = countQuery.where(eb => 
-        eb.or([
-          eb('marketplace_listings.title', 'like', `%${filters.searchTerm}%`),
-          eb('marketplace_listings.description', 'like', `%${filters.searchTerm}%`)
-        ])
-      );
-    }
-
-    // Execute count query
-    const totalResult = await countQuery.executeTakeFirst();
-    const total = Number(totalResult?.count || 0);
+    const total = Number(countResult?.count || 0);
 
     // Get listings with pagination
     const listings = await query
