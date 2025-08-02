@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Users, Lightbulb, Coins, ShoppingBag, Globe, Zap, TrendingUp } from 'lucide-react';
+import { MapPin, Users, Lightbulb, ShoppingBag, Globe, Zap } from 'lucide-react';
 
 export const HomePage = () => {
   return (
@@ -14,7 +14,7 @@ export const HomePage = () => {
           Mandala Raiz
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-3xl mx-auto">
-          Plataforma geolocada de co-criação comunitária com economia regenerativa
+          Plataforma geolocada de co-criação comunitária
         </p>
         
         {/* Phase Flow */}
@@ -91,12 +91,12 @@ export const HomePage = () => {
 
         <Card className="border-phase-act">
           <CardHeader className="text-center">
-            <Coins className="h-8 w-8 mx-auto mb-2 text-phase-act" />
-            <CardTitle className="text-phase-act">Economia Seeds & Roots</CardTitle>
+            <Zap className="h-8 w-8 mx-auto mb-2 text-phase-act" />
+            <CardTitle className="text-phase-act">Painel de Energia</CardTitle>
           </CardHeader>
           <CardContent>
             <CardDescription>
-              Sistema de duas moedas: Seeds (participação) e Roots (valor real). 10% burn previne inflação.
+              Sistema de monitoramento de saúde dos projetos com métricas de colaboração e diversidade.
             </CardDescription>
           </CardContent>
         </Card>
@@ -108,72 +108,10 @@ export const HomePage = () => {
           </CardHeader>
           <CardContent>
             <CardDescription>
-              Compre e venda produtos/serviços com Seeds. Sistema de reputação e localização integrados.
+              Troque produtos e serviços localmente. Sistema de reputação e localização integrados.
             </CardDescription>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Token Economy Showcase */}
-      <div className="mb-12">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">Economia Regenerativa</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Coins className="mr-2 h-5 w-5 text-green-600" />
-                Seeds (Sementes)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Ganha por participação</span>
-                  <Badge variant="secondary">100/dia máx</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Burn em transações</span>
-                  <Badge className="bg-orange-500">10%</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Conversão para Roots</span>
-                  <Badge className="bg-blue-500">100:1</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Use para marketplace, apoio a projetos e conversão para Roots
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="mr-2 h-5 w-5 text-blue-600" />
-                Roots (Raízes)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Valor real garantido</span>
-                  <Badge className="bg-green-500">1 Root = $0.01</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Saque mínimo</span>
-                  <Badge variant="secondary">10,000 Roots</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Taxa de saque</span>
-                  <Badge className="bg-orange-500">5%</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Moeda estável para valor real e saques em fiat
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Additional Features */}
@@ -196,12 +134,12 @@ export const HomePage = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Zap className="mr-2 h-5 w-5 text-yellow-500" />
-              Anti-Farming
+              Métricas de Energia
             </CardTitle>
           </CardHeader>
           <CardContent>
             <CardDescription>
-              Limites diários, rate limiting e sistema de burn previnem farming e inflação descontrolada.
+              Painel de energia mostra saúde do projeto, onda de colaboração e diversidade da equipe.
             </CardDescription>
           </CardContent>
         </Card>
@@ -210,12 +148,12 @@ export const HomePage = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="mr-2 h-5 w-5 text-purple-500" />
-              Reputação
+              Gestão de Tarefas
             </CardTitle>
           </CardHeader>
           <CardContent>
             <CardDescription>
-              Sistema de avaliações para compradores e vendedores no marketplace com histórico transparente.
+              Sistema colaborativo de gestão de tarefas com diferentes prioridades e status.
             </CardDescription>
           </CardContent>
         </Card>
@@ -244,45 +182,45 @@ export const HomePage = () => {
               <div className="bg-phase-act rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">3</div>
               <div>
                 <h3 className="font-semibold text-phase-act">Agir</h3>
-                <p className="text-sm text-muted-foreground">Execute com painel de energia e economia de sementes</p>
+                <p className="text-sm text-muted-foreground">Execute com painel de energia e gestão de tarefas</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <div className="bg-phase-celebrate rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">4</div>
               <div>
                 <h3 className="font-semibold text-phase-celebrate">Celebrar</h3>
-                <p className="text-sm text-muted-foreground">Compartilhe impacto e auto-polinize projetos próximos</p>
+                <p className="text-sm text-muted-foreground">Compartilhe impacto e conecte-se com projetos próximos</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
-              <Coins className="h-6 w-6 text-green-500 mt-1" />
+              <Users className="h-6 w-6 text-green-500 mt-1" />
               <div>
-                <h3 className="font-semibold">Ganhe Seeds</h3>
-                <p className="text-sm text-muted-foreground">Participe ativamente: posts, comentários, tarefas</p>
+                <h3 className="font-semibold">Colabore Localmente</h3>
+                <p className="text-sm text-muted-foreground">Encontre pessoas próximas trabalhando em projetos similares</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <ShoppingBag className="h-6 w-6 text-blue-500 mt-1" />
               <div>
-                <h3 className="font-semibold">Use no Marketplace</h3>
-                <p className="text-sm text-muted-foreground">Compre/venda produtos e serviços locais</p>
+                <h3 className="font-semibold">Use o Marketplace</h3>
+                <p className="text-sm text-muted-foreground">Troque produtos e serviços com a comunidade local</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <TrendingUp className="h-6 w-6 text-purple-500 mt-1" />
+              <Zap className="h-6 w-6 text-purple-500 mt-1" />
               <div>
-                <h3 className="font-semibold">Converta para Roots</h3>
-                <p className="text-sm text-muted-foreground">Transforme participação em valor real</p>
+                <h3 className="font-semibold">Monitore a Energia</h3>
+                <p className="text-sm text-muted-foreground">Acompanhe a saúde e progresso dos projetos</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <Globe className="h-6 w-6 text-orange-500 mt-1" />
               <div>
-                <h3 className="font-semibold">Saque Real</h3>
-                <p className="text-sm text-muted-foreground">Retire Roots como dinheiro real</p>
+                <h3 className="font-semibold">Impacto Real</h3>
+                <p className="text-sm text-muted-foreground">Crie mudanças concretas na sua comunidade</p>
               </div>
             </div>
           </div>

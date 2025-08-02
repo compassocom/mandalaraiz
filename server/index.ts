@@ -3,10 +3,7 @@ import dotenv from 'dotenv';
 import { setupStaticServing } from './static-serve.js';
 import { db } from './db/index.js';
 import { DreamService } from './services/dreamService.js';
-import { SeedService } from './services/seedService.js';
 import { EnergyService } from './services/energyService.js';
-import { DonationService } from './services/donationService.js';
-import { TokenService } from './services/tokenService.js';
 import { MarketplaceService } from './services/marketplaceService.js';
 import { LocalizationService } from './services/localizationService.js';
 
@@ -22,10 +19,7 @@ declare global {
 
 const app = express();
 const dreamService = new DreamService();
-const seedService = new SeedService();
 const energyService = new EnergyService();
-const donationService = new DonationService();
-const tokenService = new TokenService();
 const marketplaceService = new MarketplaceService();
 const localizationService = new LocalizationService();
 
@@ -71,49 +65,6 @@ app.get('/api/detect-language', async (req, res) => {
   } catch (error) {
     console.error('Error detecting language:', error);
     res.status(500).json({ error: 'Failed to detect language' });
-  }
-});
-
-// Token economy endpoints
-app.get('/api/users/:id/tokens', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    if (isNaN(userId)) {
-      res.status(400).json({ error: 'Invalid user ID' });
-      return;
-    }
-    
-    const tokens = await tokenService.getUserTokens(userId);
-    res.json(tokens);
-  } catch (error) {
-    console.error('Error fetching user tokens:', error);
-    res.status(500).json({ error: 'Failed to fetch user tokens' });
-  }
-});
-
-app.post('/api/users/:id/award-seeds', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    if (isNaN(userId)) {
-      res.status(400).json({ error: 'Invalid user ID' });
-      return;
-    }
-    
-    const { amount, description } = req.body;
-    if (!amount || !description) {
-      res.status(400).json({ error: 'Amount and description are required' });
-      return;
-    }
-    
-    const success = await tokenService.awardSeeds(userId, amount, description);
-    if (success) {
-      res.json({ success: true, message: 'Seeds awarded successfully' });
-    } else {
-      res.status(400).json({ success: false, message: 'Daily Seeds cap reached' });
-    }
-  } catch (error) {
-    console.error('Error awarding seeds:', error);
-    res.status(500).json({ error: 'Failed to award seeds' });
   }
 });
 
@@ -274,46 +225,6 @@ app.get('/api/dreams/:id/energy', async (req, res) => {
   }
 });
 
-// Seed wallet endpoints
-app.get('/api/users/:id/wallet', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    if (isNaN(userId)) {
-      res.status(400).json({ error: 'Invalid user ID' });
-      return;
-    }
-    
-    let wallet = await seedService.getWalletBalance(userId);
-    
-    if (!wallet) {
-      wallet = await seedService.initializeWallet(userId);
-    }
-    
-    res.json(wallet);
-  } catch (error) {
-    console.error('Error fetching wallet:', error);
-    res.status(500).json({ error: 'Failed to fetch wallet' });
-  }
-});
-
-app.get('/api/users/:id/transactions', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    if (isNaN(userId)) {
-      res.status(400).json({ error: 'Invalid user ID' });
-      return;
-    }
-    
-    const limit = parseInt(req.query.limit as string) || 50;
-    
-    const transactions = await seedService.getTransactionHistory(userId, limit);
-    res.json(transactions);
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
-  }
-});
-
 // Marketplace endpoints
 app.get('/api/marketplace/listings', async (req, res) => {
   try {
@@ -334,10 +245,10 @@ app.get('/api/marketplace/listings', async (req, res) => {
 
 app.post('/api/marketplace/listings', async (req, res) => {
   try {
-    const { seller_id, title, description, price_seeds } = req.body;
+    const { seller_id, title, description, category } = req.body;
     
-    if (!seller_id || !title || !description || !price_seeds) {
-      res.status(400).json({ error: 'seller_id, title, description, and price_seeds are required' });
+    if (!seller_id || !title || !description || !category) {
+      res.status(400).json({ error: 'seller_id, title, description, and category are required' });
       return;
     }
     
@@ -346,84 +257,6 @@ app.post('/api/marketplace/listings', async (req, res) => {
   } catch (error) {
     console.error('Error creating marketplace listing:', error);
     res.status(500).json({ error: 'Failed to create marketplace listing' });
-  }
-});
-
-app.post('/api/marketplace/purchase/:id', async (req, res) => {
-  try {
-    const listingId = parseInt(req.params.id);
-    if (isNaN(listingId)) {
-      res.status(400).json({ error: 'Invalid listing ID' });
-      return;
-    }
-    
-    const { buyer_id } = req.body;
-    if (!buyer_id) {
-      res.status(400).json({ error: 'buyer_id is required' });
-      return;
-    }
-    
-    const result = await marketplaceService.purchaseItem(listingId, buyer_id);
-    
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(400).json(result);
-    }
-  } catch (error) {
-    console.error('Error purchasing item:', error);
-    res.status(500).json({ error: 'Failed to purchase item' });
-  }
-});
-
-// Donation endpoints
-app.post('/api/donors', async (req, res) => {
-  try {
-    const { email, name } = req.body;
-    
-    if (!email || !name) {
-      res.status(400).json({ error: 'Email and name are required' });
-      return;
-    }
-    
-    const preferred_currency = req.body.preferred_currency || 'USD';
-    const donor = await donationService.registerDonor(email, name, preferred_currency);
-    res.json(donor);
-  } catch (error) {
-    console.error('Error registering donor:', error);
-    res.status(500).json({ error: 'Failed to register donor' });
-  }
-});
-
-app.post('/api/donations', async (req, res) => {
-  try {
-    const {
-      donor_id,
-      amount,
-      currency,
-      donation_type
-    } = req.body;
-    
-    if (!donor_id || !amount || !currency || !donation_type) {
-      res.status(400).json({ error: 'donor_id, amount, currency, and donation_type are required' });
-      return;
-    }
-    
-    const donation = await donationService.processDonation(
-      donor_id,
-      amount,
-      currency,
-      donation_type,
-      req.body.target_dream_id,
-      req.body.target_category,
-      req.body.donor_message,
-      req.body.payment_reference
-    );
-    
-    res.json(donation);
-  } catch (error) {
-    console.error('Error processing donation:', error);
-    res.status(500).json({ error: 'Failed to process donation' });
   }
 });
 

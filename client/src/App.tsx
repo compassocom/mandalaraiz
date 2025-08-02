@@ -4,7 +4,6 @@ import { HomePage } from './pages/HomePage';
 import { DreamPage } from './pages/DreamPage';
 import { CreateDreamPage } from './pages/CreateDreamPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { SowPage } from './pages/SowPage';
 import { CollectiveCareAgreementPage } from './pages/CollectiveCareAgreementPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { RegenerativeFAQPage } from './pages/RegenerativeFAQPage';
@@ -23,7 +22,6 @@ function App() {
             <Route path="/dream/:id" element={<DreamPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
-            <Route path="/sow/:linkId" element={<SowPage />} />
             <Route path="/agreement" element={<CollectiveCareAgreementPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/faq" element={<RegenerativeFAQPage />} />

@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { GoogleMap } from '@/components/GoogleMap';
-import { ArrowLeft, MapPin, Users, Activity, Coins } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Activity } from 'lucide-react';
 import { EnergyDashboard } from '@/components/EnergyDashboard';
 import { TaskList } from '@/components/TaskList';
-import { SeedWallet } from '@/components/SeedWallet';
 
 interface Dream {
   id: number;
@@ -234,21 +233,6 @@ export const DreamPage = () => {
                   </p>
                 )}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Coins className="mr-2 h-5 w-5" />
-                Carteira de Sementes
-              </CardTitle>
-              <CardDescription>
-                Sistema de moeda regenerativa
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SeedWallet userId={1} />
             </CardContent>
           </Card>
         </div>
