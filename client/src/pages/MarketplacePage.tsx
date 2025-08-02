@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Search, MapPin, Star, ShoppingBag, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Search, MapPin, Star, ShoppingBag, Filter, AlertCircle } from 'lucide-react';
 
 interface MarketplaceListing {
   id: number;
@@ -32,6 +32,7 @@ export const MarketplacePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [maxDistance, setMaxDistance] = useState(10); // km
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newListing, setNewListing] = useState({
     title: '',
@@ -59,14 +60,36 @@ export const MarketplacePage = () => {
             lng: position.coords.longitude,
           };
           setUserLocation(location);
+          setLocationError(null);
           fetchListings(location);
         },
         (error) => {
-          console.error('Error getting location:', error);
+          console.log('Error getting location:', error);
+          let errorMessage = 'Não foi possível obter sua localização';
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Permissão de localização negada. Ative a localização para ver itens próximos.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Localização indisponível no momento.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Timeout ao obter localização.';
+              break;
+          }
+          
+          setLocationError(errorMessage);
           fetchListings();
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
         }
       );
     } else {
+      setLocationError('Geolocalização não é suportada pelo seu navegador');
       fetchListings();
     }
   }, [searchTerm, selectedCategory, maxDistance]);
@@ -84,18 +107,19 @@ export const MarketplacePage = () => {
 
   const fetchListings = async (location?: { lat: number; lng: number }) => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
       if (selectedCategory) params.set('category', selectedCategory);
       
       const response = await fetch(`/api/marketplace/listings?${params}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch listings');
+        throw new Error(`Failed to fetch listings: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
       
       // Calculate distances and filter by maxDistance if user location is available
-      let processedListings = data.listings;
+      let processedListings = data.listings || [];
       
       if (location) {
         processedListings = data.listings
@@ -126,6 +150,8 @@ export const MarketplacePage = () => {
       setListings(processedListings);
     } catch (error) {
       console.error('Error fetching listings:', error);
+      console.log('Failed to fetch listings', error);
+      setListings([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -168,10 +194,10 @@ export const MarketplacePage = () => {
         location_text: '',
       });
       setShowCreateDialog(false);
-      alert('Listing created successfully!');
+      alert('Anúncio criado com sucesso!');
     } catch (error) {
       console.error('Error creating listing:', error);
-      alert('Failed to create listing. Please try again.');
+      alert('Falha ao criar anúncio. Tente novamente.');
     }
   };
 
@@ -299,6 +325,31 @@ export const MarketplacePage = () => {
         </div>
       </div>
 
+      {/* Location Error Alert */}
+      {locationError && (
+        <Card className="mb-6 border-yellow-400">
+          <CardHeader>
+            <CardTitle className="flex items-center text-yellow-700">
+              <AlertCircle className="mr-2 h-5 w-5" />
+              Problema de Localização
+            </CardTitle>
+            <CardDescription>{locationError}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()}
+              className="mr-2"
+            >
+              Tentar Novamente
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Você ainda pode ver todos os anúncios disponíveis
+            </span>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="relative">
@@ -365,7 +416,7 @@ export const MarketplacePage = () => {
               <div className="space-y-3">
                 {/* Seller Info */}
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">{listing.seller_name}</span>
+                  <span className="text-sm font-medium">{listing.seller_name || 'Vendedor'}</span>
                 </div>
 
                 {/* Location & Distance */}
@@ -394,7 +445,7 @@ export const MarketplacePage = () => {
         ))}
       </div>
 
-      {listings.length === 0 && (
+      {listings.length === 0 && !loading && (
         <Card className="text-center py-12">
           <CardContent>
             <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -412,17 +463,6 @@ export const MarketplacePage = () => {
               Criar Primeiro Anúncio
             </Button>
           </CardContent>
-        </Card>
-      )}
-
-      {!userLocation && (
-        <Card className="mt-6 border-yellow-400">
-          <CardHeader>
-            <CardTitle>Localização Desabilitada</CardTitle>
-            <CardDescription>
-              Ative a localização para ver apenas itens próximos a você e filtrar por distância
-            </CardDescription>
-          </CardHeader>
         </Card>
       )}
     </div>

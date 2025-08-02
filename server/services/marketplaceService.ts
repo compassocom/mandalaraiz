@@ -66,11 +66,30 @@ export class MarketplaceService {
       );
     }
 
-    // Get total count
-    const totalResult = await query
-      .select(eb => eb.fn.count('marketplace_listings.id').as('count'))
-      .executeTakeFirst();
-    const total = parseInt(totalResult?.count as string || '0');
+    // Get total count with a separate query to avoid complex binding
+    let countQuery = db
+      .selectFrom('marketplace_listings')
+      .select(eb => eb.fn.countAll().as('count'))
+      .where('marketplace_listings.is_active', '=', true)
+      .where('marketplace_listings.is_approved', '=', true);
+
+    // Apply same filters to count query
+    if (filters.category) {
+      countQuery = countQuery.where('marketplace_listings.category', '=', filters.category as any);
+    }
+
+    if (filters.searchTerm) {
+      countQuery = countQuery.where(eb => 
+        eb.or([
+          eb('marketplace_listings.title', 'like', `%${filters.searchTerm}%`),
+          eb('marketplace_listings.description', 'like', `%${filters.searchTerm}%`)
+        ])
+      );
+    }
+
+    // Execute count query
+    const totalResult = await countQuery.executeTakeFirst();
+    const total = Number(totalResult?.count || 0);
 
     // Get listings with pagination
     const listings = await query
@@ -79,6 +98,7 @@ export class MarketplaceService {
       .offset(filters.offset || 0)
       .execute();
 
+    console.log(`Found ${listings.length} marketplace listings (total: ${total})`);
     return { listings, total };
   }
 }

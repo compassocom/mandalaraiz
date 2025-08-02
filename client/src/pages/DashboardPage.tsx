@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { GoogleMap } from '@/components/GoogleMap';
-import { ArrowLeft, MapPin, Users, Plus, Map } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Plus, Map, AlertCircle } from 'lucide-react';
 
 interface Dream {
   id: number;
@@ -24,6 +24,7 @@ export const DashboardPage = () => {
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   useEffect(() => {
@@ -36,14 +37,36 @@ export const DashboardPage = () => {
             lng: position.coords.longitude,
           };
           setUserLocation(location);
+          setLocationError(null);
           fetchNearbyDreams(location.lat, location.lng);
         },
         (error) => {
-          console.error('Error getting location:', error);
+          console.log('Error getting location:', error);
+          let errorMessage = 'Não foi possível obter sua localização';
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Permissão de localização negada. Ative a localização para descobrir sonhos próximos.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Localização indisponível no momento.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Timeout ao obter localização.';
+              break;
+          }
+          
+          setLocationError(errorMessage);
           setLoading(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
         }
       );
     } else {
+      setLocationError('Geolocalização não é suportada pelo seu navegador');
       setLoading(false);
     }
   }, []);
@@ -134,6 +157,7 @@ export const DashboardPage = () => {
               variant={viewMode === 'map' ? 'default' : 'outline'}
               onClick={() => setViewMode('map')}
               size="sm"
+              disabled={!userLocation}
             >
               <Map className="mr-2 h-4 w-4" />
               Mapa
@@ -148,14 +172,28 @@ export const DashboardPage = () => {
         </div>
       </div>
 
-      {!userLocation && (
+      {/* Location Error Alert */}
+      {locationError && (
         <Card className="mb-6 border-yellow-400">
           <CardHeader>
-            <CardTitle>Localização Necessária</CardTitle>
-            <CardDescription>
-              Por favor, ative os serviços de localização para descobrir sonhos próximos
-            </CardDescription>
+            <CardTitle className="flex items-center text-yellow-700">
+              <AlertCircle className="mr-2 h-5 w-5" />
+              Problema de Localização
+            </CardTitle>
+            <CardDescription>{locationError}</CardDescription>
           </CardHeader>
+          <CardContent>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.reload()}
+              className="mr-2"
+            >
+              Tentar Novamente
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Ative a localização para descobrir sonhos próximos
+            </span>
+          </CardContent>
         </Card>
       )}
 
@@ -255,6 +293,17 @@ export const DashboardPage = () => {
               </Button>
             </Link>
           </CardContent>
+        </Card>
+      )}
+
+      {!userLocation && !locationError && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Aguardando Localização</CardTitle>
+            <CardDescription>
+              Obtendo sua localização para mostrar sonhos próximos...
+            </CardDescription>
+          </CardHeader>
         </Card>
       )}
     </div>
