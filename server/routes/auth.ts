@@ -16,6 +16,62 @@ const generateToken = (user: any) => {
   );
 };
 
+// Initialize admin users if they don't exist
+const initializeAdminUsers = async () => {
+  try {
+    // Check if admin exists
+    const adminExists = await db
+      .selectFrom('users')
+      .select('id')
+      .where('email', '=', 'admin@mandalaraiz.org')
+      .executeTakeFirst();
+
+    if (!adminExists) {
+      const adminHash = await bcrypt.hash('admin123', 12);
+      await db
+        .insertInto('users')
+        .values({
+          email: 'admin@mandalaraiz.org',
+          name: 'Administrador',
+          password_hash: adminHash,
+          role: 'ADMIN',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .execute();
+      console.log('Admin user created with email: admin@mandalaraiz.org and password: admin123');
+    }
+
+    // Check if moderator exists
+    const moderatorExists = await db
+      .selectFrom('users')
+      .select('id')
+      .where('email', '=', 'moderator@mandalaraiz.org')
+      .executeTakeFirst();
+
+    if (!moderatorExists) {
+      const moderatorHash = await bcrypt.hash('moderator123', 12);
+      await db
+        .insertInto('users')
+        .values({
+          email: 'moderator@mandalaraiz.org',
+          name: 'Moderador',
+          password_hash: moderatorHash,
+          role: 'MODERATOR',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .execute();
+      console.log('Moderator user created with email: moderator@mandalaraiz.org and password: moderator123');
+    }
+  } catch (error) {
+    console.error('Error initializing admin users:', error);
+  }
+};
+
+// Initialize admin users on module load
+initializeAdminUsers();
+
 // Register new user
 router.post('/register', async (req, res) => {
   try {
@@ -91,6 +147,8 @@ router.post('/login', async (req, res) => {
       return;
     }
 
+    console.log(`Login attempt for email: ${email}`);
+
     // Find user
     const user = await db
       .selectFrom('users')
@@ -99,14 +157,18 @@ router.post('/login', async (req, res) => {
       .executeTakeFirst();
 
     if (!user || !user.password_hash) {
+      console.log(`User not found or no password hash for email: ${email}`);
       res.status(401).json({ error: 'Email ou senha incorretos' });
       return;
     }
+
+    console.log(`User found: ${user.email}, Role: ${user.role}`);
 
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {
+      console.log(`Invalid password for email: ${email}`);
       res.status(401).json({ error: 'Email ou senha incorretos' });
       return;
     }
@@ -114,7 +176,7 @@ router.post('/login', async (req, res) => {
     // Create JWT token
     const token = generateToken(user);
 
-    console.log(`User logged in: ${user.email} (ID: ${user.id}, Role: ${user.role})`);
+    console.log(`User logged in successfully: ${user.email} (ID: ${user.id}, Role: ${user.role})`);
 
     res.json({
       user: {
@@ -124,7 +186,8 @@ router.post('/login', async (req, res) => {
         role: user.role,
         avatar_url: user.avatar_url,
       },
-      token
+      token,
+      redirectTo: user.role === 'ADMIN' ? '/admin' : '/dashboard'
     });
   } catch (error) {
     console.error('Login error:', error);

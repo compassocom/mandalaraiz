@@ -62,12 +62,9 @@ export const LoginPage = () => {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Redirect based on user role
-      if (data.user.role === 'ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      // Redirect based on server response or user role
+      const redirectPath = data.redirectTo || (data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
+      navigate(redirectPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -77,6 +74,20 @@ export const LoginPage = () => {
 
   const handleSocialLogin = (provider: string) => {
     window.location.href = `/api/auth/${provider}`;
+  };
+
+  const handleAdminLogin = () => {
+    setFormData({
+      email: 'admin@mandalaraiz.org',
+      password: 'admin123'
+    });
+  };
+
+  const handleModeratorLogin = () => {
+    setFormData({
+      email: 'moderator@mandalaraiz.org',
+      password: 'moderator123'
+    });
   };
 
   return (
@@ -203,17 +214,41 @@ export const LoginPage = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-blue-800">Acesso Administrativo</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-xs">
-            <div>
-              <span className="font-medium text-blue-700">Administrador:</span>
-              <div className="text-blue-600">Email: admin@mandalaraiz.org</div>
-              <div className="text-blue-600">Senha: admin123</div>
+          <CardContent className="space-y-3 text-xs">
+            <div className="space-y-2">
+              <div>
+                <span className="font-medium text-blue-700">Administrador:</span>
+                <div className="text-blue-600">Email: admin@mandalaraiz.org</div>
+                <div className="text-blue-600">Senha: admin123</div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAdminLogin}
+                className="w-full text-xs"
+              >
+                Login como Admin
+              </Button>
             </div>
-            <div>
-              <span className="font-medium text-blue-700">Moderador:</span>
-              <div className="text-blue-600">Email: moderator@mandalaraiz.org</div>
-              <div className="text-blue-600">Senha: moderator123</div>
+            
+            <div className="space-y-2">
+              <div>
+                <span className="font-medium text-blue-700">Moderador:</span>
+                <div className="text-blue-600">Email: moderator@mandalaraiz.org</div>
+                <div className="text-blue-600">Senha: moderator123</div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleModeratorLogin}
+                className="w-full text-xs"
+              >
+                Login como Moderador
+              </Button>
             </div>
+            
             <div className="text-xs text-blue-500 mt-2">
               * Login social disponível quando as credenciais OAuth estiverem configuradas
             </div>

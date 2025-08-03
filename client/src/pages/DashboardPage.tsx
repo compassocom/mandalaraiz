@@ -106,6 +106,36 @@ export const DashboardPage = () => {
     }
   };
 
+  const getPhaseBorderClass = (phase: string) => {
+    switch (phase) {
+      case 'DREAM': return 'border-phase-dream';
+      case 'PLAN': return 'border-phase-plan';
+      case 'ACT': return 'border-phase-act';
+      case 'CELEBRATE': return 'border-phase-celebrate';
+      default: return 'border-gray-500';
+    }
+  };
+
+  const getPhaseTextClass = (phase: string) => {
+    switch (phase) {
+      case 'DREAM': return 'text-phase-dream';
+      case 'PLAN': return 'text-phase-plan';
+      case 'ACT': return 'text-phase-act';
+      case 'CELEBRATE': return 'text-phase-celebrate';
+      default: return 'text-gray-500';
+    }
+  };
+
+  const getPhaseHoverClass = (phase: string) => {
+    switch (phase) {
+      case 'DREAM': return 'hover:bg-phase-dream';
+      case 'PLAN': return 'hover:bg-phase-plan';
+      case 'ACT': return 'hover:bg-phase-act';
+      case 'CELEBRATE': return 'hover:bg-phase-celebrate';
+      default: return 'hover:bg-gray-500';
+    }
+  };
+
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -230,7 +260,7 @@ export const DashboardPage = () => {
       {viewMode === 'grid' && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dreams.map((dream) => (
-            <Card key={dream.id} className={`cursor-pointer hover:shadow-lg transition-shadow border-2 border-phase-${dream.phase.toLowerCase()}`}>
+            <Card key={dream.id} className={`cursor-pointer hover:shadow-lg transition-shadow border-2 ${getPhaseBorderClass(dream.phase)}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -266,7 +296,11 @@ export const DashboardPage = () => {
                     <span>Até {dream.participant_limit} participantes</span>
                   </div>
                   <Link to={`/dream/${dream.id}`}>
-                    <Button variant="outline" size="sm" className={`border-phase-${dream.phase.toLowerCase()} text-phase-${dream.phase.toLowerCase()} hover:${getPhaseColor(dream.phase)} hover:text-white`}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className={`${getPhaseBorderClass(dream.phase)} ${getPhaseTextClass(dream.phase)} ${getPhaseHoverClass(dream.phase)} hover:text-white`}
+                    >
                       Ver Detalhes
                     </Button>
                   </Link>

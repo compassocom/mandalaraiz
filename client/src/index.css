@@ -73,76 +73,76 @@
   }
 }
 
-/* Mandala Raiz Phase Color Classes */
+/* Static Mandala Raiz Phase Color Classes */
 .bg-phase-dream {
-  background-color: hsl(var(--mandala-dream));
+  background-color: hsl(0 75% 60%);
   color: white;
 }
 
 .bg-phase-plan {
-  background-color: hsl(var(--mandala-plan));
+  background-color: hsl(45 95% 55%);
   color: black;
 }
 
 .bg-phase-act {
-  background-color: hsl(var(--mandala-act));
+  background-color: hsl(210 75% 60%);
   color: white;
 }
 
 .bg-phase-celebrate {
-  background-color: hsl(var(--mandala-celebrate));
+  background-color: hsl(120 75% 60%);
   color: white;
 }
 
 .border-phase-dream {
-  border-color: hsl(var(--mandala-dream));
+  border-color: hsl(0 75% 60%);
 }
 
 .border-phase-plan {
-  border-color: hsl(var(--mandala-plan));
+  border-color: hsl(45 95% 55%);
 }
 
 .border-phase-act {
-  border-color: hsl(var(--mandala-act));
+  border-color: hsl(210 75% 60%);
 }
 
 .border-phase-celebrate {
-  border-color: hsl(var(--mandala-celebrate));
+  border-color: hsl(120 75% 60%);
 }
 
 .text-phase-dream {
-  color: hsl(var(--mandala-dream));
+  color: hsl(0 75% 60%);
 }
 
 .text-phase-plan {
-  color: hsl(var(--mandala-plan));
+  color: hsl(45 95% 55%);
 }
 
 .text-phase-act {
-  color: hsl(var(--mandala-act));
+  color: hsl(210 75% 60%);
 }
 
 .text-phase-celebrate {
-  color: hsl(var(--mandala-celebrate));
+  color: hsl(120 75% 60%);
 }
 
 .hover\:bg-phase-dream:hover {
-  background-color: hsl(var(--mandala-dream));
+  background-color: hsl(0 75% 60%);
   color: white;
 }
 
 .hover\:bg-phase-plan:hover {
-  background-color: hsl(var(--mandala-plan));
+  background-color: hsl(45 95% 55%);
   color: black;
 }
 
 .hover\:bg-phase-act:hover {
-  background-color: hsl(var(--mandala-act));
+  background-color: hsl(210 75% 60%);
   color: white;
 }
 
 .hover\:bg-phase-celebrate:hover {
-  background-color: hsl(var(--mandala-celebrate));
+  background-color: hsl(120 75% 60%);
   color: white;
 }
 
