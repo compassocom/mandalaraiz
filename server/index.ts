@@ -1,4 +1,5 @@
 import express from 'express';
+import session from 'express-session';
 import dotenv from 'dotenv';
 import { setupStaticServing } from './static-serve.js';
 import { db } from './db/index.js';
@@ -7,6 +8,8 @@ import { EnergyService } from './services/energyService.js';
 import { MarketplaceService } from './services/marketplaceService.js';
 import { LocalizationService } from './services/localizationService.js';
 import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
+import passport from './config/passport.js';
 
 dotenv.config();
 
@@ -23,6 +26,21 @@ const dreamService = new DreamService();
 const energyService = new EnergyService();
 const marketplaceService = new MarketplaceService();
 const localizationService = new LocalizationService();
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'development-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Body parsing middleware
 app.use(express.json());
@@ -55,6 +73,9 @@ app.use('/api/*splat', (req, res, next) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Admin routes
+app.use('/api/admin', adminRoutes);
 
 // Localization endpoints
 app.get('/api/detect-language', async (req, res) => {

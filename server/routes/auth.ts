@@ -1,9 +1,20 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import passport from '../config/passport.js';
 import { db } from '../db/index.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Helper function to generate JWT
+const generateToken = (user: any) => {
+  return jwt.sign(
+    { userId: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET || 'development-secret',
+    { expiresIn: '7d' }
+  );
+};
 
 // Register new user
 router.post('/register', async (req, res) => {
@@ -42,18 +53,15 @@ router.post('/register', async (req, res) => {
         name: name.trim(),
         email: email.toLowerCase(),
         password_hash: passwordHash,
+        role: 'USER',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .returning(['id', 'name', 'email', 'created_at'])
+      .returning(['id', 'name', 'email', 'role', 'avatar_url', 'created_at'])
       .executeTakeFirstOrThrow();
 
     // Create JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'development-secret',
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user);
 
     console.log(`New user registered: ${user.email} (ID: ${user.id})`);
 
@@ -62,6 +70,8 @@ router.post('/register', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
+        avatar_url: user.avatar_url,
       },
       token
     });
@@ -84,11 +94,11 @@ router.post('/login', async (req, res) => {
     // Find user
     const user = await db
       .selectFrom('users')
-      .select(['id', 'name', 'email', 'password_hash'])
+      .select(['id', 'name', 'email', 'role', 'password_hash', 'avatar_url'])
       .where('email', '=', email.toLowerCase())
       .executeTakeFirst();
 
-    if (!user) {
+    if (!user || !user.password_hash) {
       res.status(401).json({ error: 'Email ou senha incorretos' });
       return;
     }
@@ -102,19 +112,17 @@ router.post('/login', async (req, res) => {
     }
 
     // Create JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'development-secret',
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user);
 
-    console.log(`User logged in: ${user.email} (ID: ${user.id})`);
+    console.log(`User logged in: ${user.email} (ID: ${user.id}, Role: ${user.role})`);
 
     res.json({
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
+        avatar_url: user.avatar_url,
       },
       token
     });
@@ -125,49 +133,105 @@ router.post('/login', async (req, res) => {
 });
 
 // Get current user
-router.get('/me', async (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Token de autorização necessário' });
+    const user = await db
+      .selectFrom('users')
+      .select(['id', 'name', 'email', 'role', 'location_lat', 'location_lng', 'avatar_url', 'created_at'])
+      .where('id', '=', req.user!.id)
+      .executeTakeFirst();
+
+    if (!user) {
+      res.status(401).json({ error: 'Usuário não encontrado' });
       return;
     }
 
-    const token = authHeader.substring(7);
-    
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'development-secret') as any;
-      
-      const user = await db
-        .selectFrom('users')
-        .select(['id', 'name', 'email', 'location_lat', 'location_lng', 'created_at'])
-        .where('id', '=', decoded.userId)
-        .executeTakeFirst();
-
-      if (!user) {
-        res.status(401).json({ error: 'Usuário não encontrado' });
-        return;
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        location_lat: user.location_lat,
+        location_lng: user.location_lng,
+        avatar_url: user.avatar_url,
+        created_at: user.created_at,
       }
-
-      res.json({
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          location_lat: user.location_lat,
-          location_lng: user.location_lng,
-          created_at: user.created_at,
-        }
-      });
-    } catch (jwtError) {
-      res.status(401).json({ error: 'Token inválido' });
-      return;
-    }
+    });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+
+// Google OAuth routes - only if configured
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+  router.get('/google/callback', 
+    passport.authenticate('google', { session: false }),
+    (req, res) => {
+      const user = req.user as any;
+      const token = generateToken(user);
+      
+      // Redirect to frontend with token
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+    }
+  );
+} else {
+  router.get('/google', (req, res) => {
+    res.status(400).json({ error: 'Google OAuth não configurado' });
+  });
+  
+  router.get('/google/callback', (req, res) => {
+    res.status(400).json({ error: 'Google OAuth não configurado' });
+  });
+}
+
+// Facebook OAuth routes - only if configured
+if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+  router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+
+  router.get('/facebook/callback',
+    passport.authenticate('facebook', { session: false }),
+    (req, res) => {
+      const user = req.user as any;
+      const token = generateToken(user);
+      
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+    }
+  );
+} else {
+  router.get('/facebook', (req, res) => {
+    res.status(400).json({ error: 'Facebook OAuth não configurado' });
+  });
+  
+  router.get('/facebook/callback', (req, res) => {
+    res.status(400).json({ error: 'Facebook OAuth não configurado' });
+  });
+}
+
+// GitHub OAuth routes - only if configured
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+  router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
+
+  router.get('/github/callback',
+    passport.authenticate('github', { session: false }),
+    (req, res) => {
+      const user = req.user as any;
+      const token = generateToken(user);
+      
+      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+    }
+  );
+} else {
+  router.get('/github', (req, res) => {
+    res.status(400).json({ error: 'GitHub OAuth não configurado' });
+  });
+  
+  router.get('/github/callback', (req, res) => {
+    res.status(400).json({ error: 'GitHub OAuth não configurado' });
+  });
+}
 
 export default router;

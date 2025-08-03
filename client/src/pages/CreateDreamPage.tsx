@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ export const CreateDreamPage = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -21,6 +22,38 @@ export const CreateDreamPage = () => {
     location_lat: 0,
     location_lng: 0,
   });
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        localStorage.removeItem('authToken');
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('authToken');
+      navigate('/login');
+    }
+  };
 
   const handleGetLocation = () => {
     if (navigator.geolocation) {
@@ -55,18 +88,25 @@ export const CreateDreamPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    if (!user) {
+      alert('Usuário não autenticado');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // For demo purposes, using user_id = 1
       const dreamData = {
         ...formData,
-        user_id: 1,
+        user_id: user.id,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
       };
 
+      const token = localStorage.getItem('authToken');
       const response = await fetch('/api/dreams', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(dreamData),
       });
@@ -84,6 +124,14 @@ export const CreateDreamPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Verificando autenticação...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">

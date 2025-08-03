@@ -4,6 +4,12 @@ export interface User {
   name: string;
   location_lat: number | null;
   location_lng: number | null;
+  role: 'USER' | 'MODERATOR' | 'ADMIN';
+  password_hash?: string;
+  google_id?: string | null;
+  facebook_id?: string | null;
+  github_id?: string | null;
+  avatar_url?: string | null;
   created_at: string;
   updated_at: string;
 }

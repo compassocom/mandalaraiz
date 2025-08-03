@@ -1,15 +1,62 @@
 import * as React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { UserCircle, LogIn, UserPlus } from 'lucide-react';
+import { UserCircle, LogIn, UserPlus, Shield, LogOut } from 'lucide-react';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'USER' | 'MODERATOR' | 'ADMIN';
+  avatar_url?: string;
+}
 
 export const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
   
   // Don't show header on login/register pages
   if (location.pathname === '/login' || location.pathname === '/register') {
     return null;
   }
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/');
+  };
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,18 +91,53 @@ export const Header = () => {
           </nav>
 
           <div className="flex items-center space-x-2">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                <LogIn className="mr-2 h-4 w-4" />
-                Entrar
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm" className="bg-phase-dream border-0">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Cadastrar
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                {(['ADMIN', 'MODERATOR'].includes(user.role)) && (
+                  <Link to="/admin">
+                    <Button variant="ghost" size="sm">
+                      <Shield className="mr-2 h-4 w-4" />
+                      {user.role === 'ADMIN' ? 'Admin' : 'Moderador'}
+                    </Button>
+                  </Link>
+                )}
+                
+                <div className="flex items-center space-x-2">
+                  {user.avatar_url ? (
+                    <img 
+                      src={user.avatar_url} 
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <UserCircle className="h-8 w-8 text-muted-foreground" />
+                  )}
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {user.name}
+                  </span>
+                </div>
+                
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Entrar
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="bg-phase-dream border-0">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Cadastrar
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

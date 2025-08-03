@@ -12,6 +12,7 @@ import { DragonPrinciplesPage } from './pages/DragonPrinciplesPage';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { AdminPage } from './pages/AdminPage';
 import { Footer } from './components/Footer';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             <Route path="/create-dream" element={<CreateDreamPage />} />
             <Route path="/dream/:id" element={<DreamPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
             <Route path="/agreement" element={<CollectiveCareAgreementPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
