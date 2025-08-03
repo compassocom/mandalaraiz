@@ -14,6 +14,7 @@ export const CreateDreamPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -46,12 +47,16 @@ export const CreateDreamPage = () => {
         setUser(data.user);
       } else {
         localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
         navigate('/login');
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       navigate('/login');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,8 +101,16 @@ export const CreateDreamPage = () => {
 
     try {
       const dreamData = {
-        ...formData,
         user_id: user.id,
+        title: formData.title,
+        description: formData.description,
+        location_lat: formData.location_lat,
+        location_lng: formData.location_lng,
+        visibility_radius: formData.visibility_radius,
+        phase: 'DREAM' as const,
+        participant_limit: 10,
+        activation_threshold: 3,
+        is_active: true,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
       };
 
@@ -112,7 +125,8 @@ export const CreateDreamPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create dream');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create dream');
       }
 
       const dream = await response.json();
@@ -125,10 +139,18 @@ export const CreateDreamPage = () => {
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">Verificando autenticação...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Redirecionando para login...</div>
       </div>
     );
   }
@@ -138,11 +160,11 @@ export const CreateDreamPage = () => {
       <div className="mb-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar ao Início
+          Voltar ao Dashboard
         </Button>
         <h1 className="text-3xl font-bold text-phase-dream">Criar um Sonho</h1>
         <p className="text-muted-foreground">
@@ -233,14 +255,14 @@ export const CreateDreamPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/dashboard')}
                   className="flex-1"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSubmitting || formData.location_lat === 0}
+                  disabled={isSubmitting || formData.location_lat === 0 || !formData.title || !formData.description}
                   className="flex-1 bg-phase-dream border-0"
                 >
                   {isSubmitting ? 'Criando...' : 'Criar Sonho'}

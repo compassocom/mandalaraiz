@@ -10,6 +10,7 @@ import { LocalizationService } from './services/localizationService.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import passport from './config/passport.js';
+import { authenticateToken } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -113,17 +114,24 @@ app.get('/api/dreams/nearby', async (req, res) => {
   }
 });
 
-app.post('/api/dreams', async (req, res) => {
+app.post('/api/dreams', authenticateToken, async (req, res) => {
   try {
     const { tags, ...dreamData } = req.body;
     
     // Validate required fields
-    if (!dreamData.title || !dreamData.description || !dreamData.user_id) {
-      res.status(400).json({ error: 'Title, description, and user_id are required' });
+    if (!dreamData.title || !dreamData.description) {
+      res.status(400).json({ error: 'Title and description are required' });
+      return;
+    }
+
+    // Ensure user_id matches authenticated user
+    if (dreamData.user_id !== req.user!.id) {
+      res.status(403).json({ error: 'Cannot create dream for another user' });
       return;
     }
     
     const dream = await dreamService.createDream(dreamData, tags || []);
+    console.log(`Dream created: ${dream.title} by user ${req.user!.id}`);
     res.json(dream);
   } catch (error) {
     console.error('Error creating dream:', error);
@@ -176,12 +184,12 @@ app.get('/api/dreams/:id/tasks', async (req, res) => {
   }
 });
 
-app.post('/api/tasks', async (req, res) => {
+app.post('/api/tasks', authenticateToken, async (req, res) => {
   try {
-    const { dream_id, creator_id, title } = req.body;
+    const { dream_id, title } = req.body;
     
-    if (!dream_id || !creator_id || !title) {
-      res.status(400).json({ error: 'dream_id, creator_id, and title are required' });
+    if (!dream_id || !title) {
+      res.status(400).json({ error: 'dream_id and title are required' });
       return;
     }
     
@@ -189,12 +197,14 @@ app.post('/api/tasks', async (req, res) => {
       .insertInto('tasks')
       .values({
         ...req.body,
+        creator_id: req.user!.id, // Use authenticated user ID
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
       .executeTakeFirstOrThrow();
     
+    console.log(`Task created: ${task.title} by user ${req.user!.id}`);
     res.json(task);
   } catch (error) {
     console.error('Error creating task:', error);
@@ -202,11 +212,29 @@ app.post('/api/tasks', async (req, res) => {
   }
 });
 
-app.put('/api/tasks/:id', async (req, res) => {
+app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
     const taskId = parseInt(req.params.id);
     if (isNaN(taskId)) {
       res.status(400).json({ error: 'Invalid task ID' });
+      return;
+    }
+    
+    // Check if user has permission to update this task
+    const existingTask = await db
+      .selectFrom('tasks')
+      .select(['creator_id', 'assignee_id'])
+      .where('id', '=', taskId)
+      .executeTakeFirst();
+    
+    if (!existingTask) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+    
+    // Only creator or assignee can update the task
+    if (existingTask.creator_id !== req.user!.id && existingTask.assignee_id !== req.user!.id) {
+      res.status(403).json({ error: 'Not authorized to update this task' });
       return;
     }
     
@@ -220,6 +248,7 @@ app.put('/api/tasks/:id', async (req, res) => {
       .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
       .executeTakeFirstOrThrow();
     
+    console.log(`Task updated: ${updatedTask.title} by user ${req.user!.id}`);
     res.json(updatedTask);
   } catch (error) {
     console.error('Error updating task:', error);
@@ -268,16 +297,22 @@ app.get('/api/marketplace/listings', async (req, res) => {
   }
 });
 
-app.post('/api/marketplace/listings', async (req, res) => {
+app.post('/api/marketplace/listings', authenticateToken, async (req, res) => {
   try {
-    const { seller_id, title, description, category } = req.body;
+    const { title, description, category } = req.body;
     
-    if (!seller_id || !title || !description || !category) {
-      res.status(400).json({ error: 'seller_id, title, description, and category are required' });
+    if (!title || !description || !category) {
+      res.status(400).json({ error: 'title, description, and category are required' });
       return;
     }
     
-    const listing = await marketplaceService.createListing(req.body);
+    const listingData = {
+      ...req.body,
+      seller_id: req.user!.id, // Use authenticated user ID
+    };
+    
+    const listing = await marketplaceService.createListing(listingData);
+    console.log(`Marketplace listing created: ${listing.title} by user ${req.user!.id}`);
     res.json(listing);
   } catch (error) {
     console.error('Error creating marketplace listing:', error);
@@ -305,6 +340,9 @@ export const startServer = async (port = PORT) => {
         console.log(`Server running on port ${port}`);
         console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
         console.log(`Data directory: ${process.env.DATA_DIRECTORY || './data'}`);
+        console.log(`Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Not configured'}`);
+        console.log(`Facebook OAuth: ${process.env.FACEBOOK_APP_ID ? 'Configured' : 'Not configured'}`);
+        console.log(`GitHub OAuth: ${process.env.GITHUB_CLIENT_ID ? 'Configured' : 'Not configured'}`);
         resolve();
       });
       

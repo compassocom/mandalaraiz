@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, LogIn, Mail, Github } from 'lucide-react';
+import { ArrowLeft, LogIn, Mail, Github, AlertCircle } from 'lucide-react';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -21,10 +21,19 @@ export const LoginPage = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
+    const oauthError = urlParams.get('error');
     
     if (token) {
       localStorage.setItem('authToken', token);
       navigate('/dashboard');
+    }
+    
+    if (oauthError) {
+      if (oauthError === 'oauth_not_configured') {
+        setError('Login social não está configurado no servidor');
+      } else if (oauthError === 'oauth_error') {
+        setError('Erro durante o login social. Tente novamente.');
+      }
     }
   }, [location, navigate]);
 
@@ -95,8 +104,9 @@ export const LoginPage = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                  {error}
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm flex items-start">
+                  <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{error}</span>
                 </div>
               )}
 
@@ -139,7 +149,7 @@ export const LoginPage = () => {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-background px-2 text-muted-foreground">
-                    Ou continue com
+                    Ou tente com
                   </span>
                 </div>
               </div>

@@ -64,7 +64,8 @@ export const RegisterPage = () => {
 
       const data = await response.json();
       
-      // Store user session or token if needed
+      // Store auth token and user data
+      localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
       // Redirect to dashboard

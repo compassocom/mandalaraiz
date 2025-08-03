@@ -171,11 +171,16 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   router.get('/google/callback', 
     passport.authenticate('google', { session: false }),
     (req, res) => {
-      const user = req.user as any;
-      const token = generateToken(user);
-      
-      // Redirect to frontend with token
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+      try {
+        const user = req.user as any;
+        const token = generateToken(user);
+        
+        // Redirect to frontend with token
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+      } catch (error) {
+        console.error('Google OAuth callback error:', error);
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_error`);
+      }
     }
   );
 } else {
@@ -184,7 +189,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   });
   
   router.get('/google/callback', (req, res) => {
-    res.status(400).json({ error: 'Google OAuth não configurado' });
+    console.log('Google OAuth not configured, redirecting to login');
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_not_configured`);
   });
 }
 
@@ -195,10 +201,15 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
   router.get('/facebook/callback',
     passport.authenticate('facebook', { session: false }),
     (req, res) => {
-      const user = req.user as any;
-      const token = generateToken(user);
-      
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+      try {
+        const user = req.user as any;
+        const token = generateToken(user);
+        
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+      } catch (error) {
+        console.error('Facebook OAuth callback error:', error);
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_error`);
+      }
     }
   );
 } else {
@@ -207,7 +218,8 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
   });
   
   router.get('/facebook/callback', (req, res) => {
-    res.status(400).json({ error: 'Facebook OAuth não configurado' });
+    console.log('Facebook OAuth not configured, redirecting to login');
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_not_configured`);
   });
 }
 
@@ -218,10 +230,15 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   router.get('/github/callback',
     passport.authenticate('github', { session: false }),
     (req, res) => {
-      const user = req.user as any;
-      const token = generateToken(user);
-      
-      res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+      try {
+        const user = req.user as any;
+        const token = generateToken(user);
+        
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+      } catch (error) {
+        console.error('GitHub OAuth callback error:', error);
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_error`);
+      }
     }
   );
 } else {
@@ -230,7 +247,8 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   });
   
   router.get('/github/callback', (req, res) => {
-    res.status(400).json({ error: 'GitHub OAuth não configurado' });
+    console.log('GitHub OAuth not configured, redirecting to login');
+    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_not_configured`);
   });
 }
 

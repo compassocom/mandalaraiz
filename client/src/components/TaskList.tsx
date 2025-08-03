@@ -27,6 +27,7 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -36,8 +37,14 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
   });
 
   useEffect(() => {
+    checkAuth();
     fetchTasks();
   }, [dreamId]);
+
+  const checkAuth = () => {
+    const token = localStorage.getItem('authToken');
+    setIsAuthenticated(!!token);
+  };
 
   const fetchTasks = async () => {
     try {
@@ -56,21 +63,28 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
 
   const createTask = async () => {
     try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Você precisa estar logado para criar tarefas');
+        return;
+      }
+
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           dream_id: dreamId,
-          creator_id: 1, // Demo user ID
           ...newTask,
           due_date: newTask.due_date || null,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create task');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create task');
       }
 
       const task = await response.json();
@@ -85,25 +99,33 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
       setShowCreateDialog(false);
     } catch (error) {
       console.error('Error creating task:', error);
-      alert('Failed to create task. Please try again.');
+      alert('Falha ao criar tarefa. Por favor, tente novamente.');
     }
   };
 
   const updateTaskStatus = async (taskId: number, status: string) => {
     try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        alert('Você precisa estar logado para atualizar tarefas');
+        return;
+      }
+
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           status,
-          assignee_id: status === 'IN_PROGRESS' ? 1 : null, // Demo user ID
+          assignee_id: status === 'IN_PROGRESS' ? null : null, // Let backend handle assignee
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update task');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update task');
       }
 
       const updatedTask = await response.json();
@@ -112,7 +134,7 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
       ));
     } catch (error) {
       console.error('Error updating task:', error);
-      alert('Failed to update task. Please try again.');
+      alert('Falha ao atualizar tarefa. Por favor, tente novamente.');
     }
   };
 
@@ -135,88 +157,90 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
   };
 
   if (loading) {
-    return <div className="text-center py-4">Loading tasks...</div>;
+    return <div className="text-center py-4">Carregando tarefas...</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Tasks ({tasks.length})</h3>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Task</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="task-title">Title</Label>
-                <Input
-                  id="task-title"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Task title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="task-description">Description</Label>
-                <textarea
-                  id="task-description"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Task description"
-                  className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        <h3 className="text-lg font-semibold">Tarefas ({tasks.length})</h3>
+        {isAuthenticated && (
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Tarefa
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Nova Tarefa</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="task-priority">Priority</Label>
-                  <select
-                    id="task-priority"
-                    value={newTask.priority}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' }))}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                  >
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="task-due-date">Due Date</Label>
+                  <Label htmlFor="task-title">Título</Label>
                   <Input
-                    id="task-due-date"
-                    type="date"
-                    value={newTask.due_date}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
+                    id="task-title"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Título da tarefa"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="task-description">Descrição</Label>
+                  <textarea
+                    id="task-description"
+                    value={newTask.description}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Descrição da tarefa"
+                    className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="task-priority">Prioridade</Label>
+                    <select
+                      id="task-priority"
+                      value={newTask.priority}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' }))}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                    >
+                      <option value="LOW">Baixa</option>
+                      <option value="MEDIUM">Média</option>
+                      <option value="HIGH">Alta</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="task-due-date">Data Limite</Label>
+                    <Input
+                      id="task-due-date"
+                      type="date"
+                      value={newTask.due_date}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="help-needed"
+                    checked={newTask.help_needed}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, help_needed: e.target.checked }))}
+                  />
+                  <Label htmlFor="help-needed">Precisa de Ajuda</Label>
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={createTask} disabled={!newTask.title}>
+                    Criar Tarefa
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                    Cancelar
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="help-needed"
-                  checked={newTask.help_needed}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, help_needed: e.target.checked }))}
-                />
-                <Label htmlFor="help-needed">Help Needed</Label>
-              </div>
-              <div className="flex space-x-2">
-                <Button onClick={createTask} disabled={!newTask.title}>
-                  Create Task
-                </Button>
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -239,38 +263,42 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
                 
                 <div className="flex items-center space-x-2">
                   <Badge className={getStatusColor(task.status)}>
-                    {task.status.replace('_', ' ')}
+                    {task.status === 'OPEN' ? 'Aberta' : 
+                     task.status === 'IN_PROGRESS' ? 'Em Progresso' : 'Concluída'}
                   </Badge>
                   <Badge variant="outline" className={getPriorityColor(task.priority)}>
-                    {task.priority}
+                    {task.priority === 'LOW' ? 'Baixa' : 
+                     task.priority === 'MEDIUM' ? 'Média' : 'Alta'}
                   </Badge>
                   {task.due_date && (
                     <span className="text-xs text-muted-foreground">
-                      Due: {new Date(task.due_date).toLocaleDateString()}
+                      Prazo: {new Date(task.due_date).toLocaleDateString('pt-BR')}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex space-x-2">
-                {task.status === 'OPEN' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateTaskStatus(task.id, 'IN_PROGRESS')}
-                  >
-                    Start
-                  </Button>
-                )}
-                {task.status === 'IN_PROGRESS' && (
-                  <Button
-                    size="sm"
-                    onClick={() => updateTaskStatus(task.id, 'COMPLETED')}
-                  >
-                    Complete
-                  </Button>
-                )}
-              </div>
+              {isAuthenticated && (
+                <div className="flex space-x-2">
+                  {task.status === 'OPEN' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateTaskStatus(task.id, 'IN_PROGRESS')}
+                    >
+                      Iniciar
+                    </Button>
+                  )}
+                  {task.status === 'IN_PROGRESS' && (
+                    <Button
+                      size="sm"
+                      onClick={() => updateTaskStatus(task.id, 'COMPLETED')}
+                    >
+                      Concluir
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
         ))}
@@ -279,7 +307,7 @@ export const TaskList = ({ dreamId }: TaskListProps) => {
       {tasks.length === 0 && (
         <Card className="p-6 text-center">
           <p className="text-muted-foreground">
-            No tasks yet. Create the first task to get started!
+            Ainda não há tarefas. {isAuthenticated ? 'Crie a primeira tarefa!' : 'Faça login para criar tarefas.'}
           </p>
         </Card>
       )}
