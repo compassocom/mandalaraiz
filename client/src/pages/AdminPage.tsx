@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Users, FileText, ShoppingBag, Settings, Trash2, Shield } from 'lucide-react';
+import { ArrowLeft, Users, FileText, ShoppingBag, Settings, Trash2, Shield, AlertCircle } from 'lucide-react';
 
 interface AdminStats {
   stats: {
@@ -37,6 +37,7 @@ export const AdminPage = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [userRole, setUserRole] = useState<string>('USER');
 
@@ -70,14 +71,15 @@ export const AdminPage = () => {
         return;
       }
 
-      fetchStats();
+      await fetchStats();
       if (data.user.role === 'ADMIN') {
-        fetchUsers();
+        await fetchUsers();
       }
     } catch (error) {
       console.error('Auth error:', error);
+      setError('Erro de autenticação. Redirecionando...');
       localStorage.removeItem('authToken');
-      navigate('/login');
+      setTimeout(() => navigate('/login'), 2000);
     }
   };
 
@@ -93,9 +95,13 @@ export const AdminPage = () => {
       if (response.ok) {
         const data = await response.json();
         setStats(data);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao carregar estatísticas');
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setError('Erro ao carregar estatísticas');
     } finally {
       setLoading(false);
     }
@@ -113,6 +119,9 @@ export const AdminPage = () => {
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to fetch users:', errorData.error);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -132,7 +141,7 @@ export const AdminPage = () => {
       });
 
       if (response.ok) {
-        fetchUsers();
+        await fetchUsers();
         alert('Role atualizado com sucesso!');
       } else {
         const error = await response.json();
@@ -159,7 +168,7 @@ export const AdminPage = () => {
       });
 
       if (response.ok) {
-        fetchUsers();
+        await fetchUsers();
         alert('Usuário deletado com sucesso!');
       } else {
         const error = await response.json();
@@ -183,6 +192,24 @@ export const AdminPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">Carregando painel administrativo...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="flex items-center text-red-700">
+              <AlertCircle className="mr-2 h-5 w-5" />
+              Erro
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">{error}</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -326,54 +353,60 @@ export const AdminPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Cadastro</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge className={getRoleBadgeColor(user.role)}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <select
-                          value={user.role}
-                          onChange={(e) => updateUserRole(user.id, e.target.value)}
-                          className="text-xs border rounded px-2 py-1"
-                        >
-                          <option value="USER">USER</option>
-                          <option value="MODERATOR">MODERATOR</option>
-                          <option value="ADMIN">ADMIN</option>
-                        </select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteUser(user.id, user.name)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            {users.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum usuário encontrado
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Cadastro</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge className={getRoleBadgeColor(user.role)}>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={user.role}
+                            onChange={(e) => updateUserRole(user.id, e.target.value)}
+                            className="text-xs border rounded px-2 py-1"
+                          >
+                            <option value="USER">USER</option>
+                            <option value="MODERATOR">MODERATOR</option>
+                            <option value="ADMIN">ADMIN</option>
+                          </select>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteUser(user.id, user.name)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       )}

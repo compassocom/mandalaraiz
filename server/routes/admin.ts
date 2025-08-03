@@ -24,12 +24,14 @@ router.get('/stats', requireModerator, async (req, res) => {
       .limit(10)
       .execute();
 
+    console.log(`Admin stats requested by user ${req.user!.id} (${req.user!.role})`);
+
     res.json({
       stats: {
-        total_users: users?.count || 0,
-        total_dreams: dreams?.count || 0,
-        total_tasks: tasks?.count || 0,
-        total_listings: listings?.count || 0
+        total_users: Number(users?.count) || 0,
+        total_dreams: Number(dreams?.count) || 0,
+        total_tasks: Number(tasks?.count) || 0,
+        total_listings: Number(listings?.count) || 0
       },
       recent_users: recentUsers
     });
@@ -54,18 +56,22 @@ router.get('/users', requireAdmin, async (req, res) => {
       .offset(offset)
       .execute();
 
-    const totalUsers = await db
+    const totalUsersResult = await db
       .selectFrom('users')
       .select(eb => eb.fn.count('id').as('count'))
       .executeTakeFirst();
+
+    const totalUsers = Number(totalUsersResult?.count) || 0;
+
+    console.log(`Admin ${req.user!.email} requested users list (page ${page})`);
 
     res.json({
       users,
       pagination: {
         page,
         limit,
-        total: totalUsers?.count || 0,
-        pages: Math.ceil((totalUsers?.count as number) / limit)
+        total: totalUsers,
+        pages: Math.ceil(totalUsers / limit)
       }
     });
   } catch (error) {
@@ -175,18 +181,22 @@ router.get('/dreams', requireModerator, async (req, res) => {
       .offset(offset)
       .execute();
 
-    const totalDreams = await db
+    const totalDreamsResult = await db
       .selectFrom('dreams')
       .select(eb => eb.fn.count('id').as('count'))
       .executeTakeFirst();
+
+    const totalDreams = Number(totalDreamsResult?.count) || 0;
+
+    console.log(`${req.user!.role} ${req.user!.email} requested dreams list (page ${page})`);
 
     res.json({
       dreams,
       pagination: {
         page,
         limit,
-        total: totalDreams?.count || 0,
-        pages: Math.ceil((totalDreams?.count as number) / limit)
+        total: totalDreams,
+        pages: Math.ceil(totalDreams / limit)
       }
     });
   } catch (error) {
@@ -258,18 +268,22 @@ router.get('/marketplace', requireModerator, async (req, res) => {
       .offset(offset)
       .execute();
 
-    const totalListings = await db
+    const totalListingsResult = await db
       .selectFrom('marketplace_listings')
       .select(eb => eb.fn.count('id').as('count'))
       .executeTakeFirst();
+
+    const totalListings = Number(totalListingsResult?.count) || 0;
+
+    console.log(`${req.user!.role} ${req.user!.email} requested marketplace listings (page ${page})`);
 
     res.json({
       listings,
       pagination: {
         page,
         limit,
-        total: totalListings?.count || 0,
-        pages: Math.ceil((totalListings?.count as number) / limit)
+        total: totalListings,
+        pages: Math.ceil(totalListings / limit)
       }
     });
   } catch (error) {

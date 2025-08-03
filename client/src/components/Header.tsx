@@ -16,11 +16,6 @@ export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  
-  // Don't show header on login/register pages
-  if (location.pathname === '/login' || location.pathname === '/register') {
-    return null;
-  }
 
   useEffect(() => {
     checkAuthStatus();
@@ -57,6 +52,11 @@ export const Header = () => {
     setUser(null);
     navigate('/');
   };
+
+  // Don't show header on login/register pages
+  if (location.pathname === '/login' || location.pathname === '/register') {
+    return null;
+  }
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
