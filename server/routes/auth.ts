@@ -19,16 +19,18 @@ const generateToken = (user: any) => {
 // Initialize admin users if they don't exist
 const initializeAdminUsers = async () => {
   try {
+    console.log('Checking and creating admin users...');
+    
     // Check if admin exists
     const adminExists = await db
       .selectFrom('users')
-      .select('id')
+      .select(['id', 'email'])
       .where('email', '=', 'admin@mandalaraiz.org')
       .executeTakeFirst();
 
     if (!adminExists) {
       const adminHash = await bcrypt.hash('admin123', 12);
-      await db
+      const adminUser = await db
         .insertInto('users')
         .values({
           email: 'admin@mandalaraiz.org',
@@ -38,20 +40,24 @@ const initializeAdminUsers = async () => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .execute();
-      console.log('Admin user created with email: admin@mandalaraiz.org and password: admin123');
+        .returning(['id', 'email', 'role'])
+        .executeTakeFirstOrThrow();
+      
+      console.log(`✅ Admin user created: ${adminUser.email} (ID: ${adminUser.id})`);
+    } else {
+      console.log(`✅ Admin user already exists: ${adminExists.email} (ID: ${adminExists.id})`);
     }
 
     // Check if moderator exists
     const moderatorExists = await db
       .selectFrom('users')
-      .select('id')
+      .select(['id', 'email'])
       .where('email', '=', 'moderator@mandalaraiz.org')
       .executeTakeFirst();
 
     if (!moderatorExists) {
       const moderatorHash = await bcrypt.hash('moderator123', 12);
-      await db
+      const moderatorUser = await db
         .insertInto('users')
         .values({
           email: 'moderator@mandalaraiz.org',
@@ -61,11 +67,17 @@ const initializeAdminUsers = async () => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .execute();
-      console.log('Moderator user created with email: moderator@mandalaraiz.org and password: moderator123');
+        .returning(['id', 'email', 'role'])
+        .executeTakeFirstOrThrow();
+      
+      console.log(`✅ Moderator user created: ${moderatorUser.email} (ID: ${moderatorUser.id})`);
+    } else {
+      console.log(`✅ Moderator user already exists: ${moderatorExists.email} (ID: ${moderatorExists.id})`);
     }
+
+    console.log('Admin users initialization completed.');
   } catch (error) {
-    console.error('Error initializing admin users:', error);
+    console.error('❌ Error initializing admin users:', error);
   }
 };
 
@@ -119,7 +131,7 @@ router.post('/register', async (req, res) => {
     // Create JWT token
     const token = generateToken(user);
 
-    console.log(`New user registered: ${user.email} (ID: ${user.id})`);
+    console.log(`✅ New user registered: ${user.email} (ID: ${user.id})`);
 
     res.status(201).json({
       user: {
@@ -132,7 +144,7 @@ router.post('/register', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('❌ Registration error:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -147,7 +159,7 @@ router.post('/login', async (req, res) => {
       return;
     }
 
-    console.log(`Login attempt for email: ${email}`);
+    console.log(`🔍 Login attempt for: ${email}`);
 
     // Find user
     const user = await db
@@ -156,19 +168,25 @@ router.post('/login', async (req, res) => {
       .where('email', '=', email.toLowerCase())
       .executeTakeFirst();
 
-    if (!user || !user.password_hash) {
-      console.log(`User not found or no password hash for email: ${email}`);
+    if (!user) {
+      console.log(`❌ User not found: ${email}`);
       res.status(401).json({ error: 'Email ou senha incorretos' });
       return;
     }
 
-    console.log(`User found: ${user.email}, Role: ${user.role}`);
+    if (!user.password_hash) {
+      console.log(`❌ No password hash for user: ${email}`);
+      res.status(401).json({ error: 'Email ou senha incorretos' });
+      return;
+    }
+
+    console.log(`👤 User found: ${user.email} (Role: ${user.role})`);
 
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {
-      console.log(`Invalid password for email: ${email}`);
+      console.log(`❌ Invalid password for: ${email}`);
       res.status(401).json({ error: 'Email ou senha incorretos' });
       return;
     }
@@ -176,7 +194,10 @@ router.post('/login', async (req, res) => {
     // Create JWT token
     const token = generateToken(user);
 
-    console.log(`User logged in successfully: ${user.email} (ID: ${user.id}, Role: ${user.role})`);
+    console.log(`✅ Login successful: ${user.email} (Role: ${user.role})`);
+
+    const redirectTo = user.role === 'ADMIN' ? '/admin' : 
+                      user.role === 'MODERATOR' ? '/admin' : '/dashboard';
 
     res.json({
       user: {
@@ -187,10 +208,10 @@ router.post('/login', async (req, res) => {
         avatar_url: user.avatar_url,
       },
       token,
-      redirectTo: user.role === 'ADMIN' ? '/admin' : '/dashboard'
+      redirectTo
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -222,7 +243,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get user error:', error);
+    console.error('❌ Get user error:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -238,10 +259,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         const user = req.user as any;
         const token = generateToken(user);
         
-        // Redirect to frontend with token
-        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+        const redirectTo = user.role === 'ADMIN' ? '/admin' : '/dashboard';
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}${redirectTo}?token=${token}`);
       } catch (error) {
-        console.error('Google OAuth callback error:', error);
+        console.error('❌ Google OAuth callback error:', error);
         res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_error`);
       }
     }
@@ -252,7 +273,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   });
   
   router.get('/google/callback', (req, res) => {
-    console.log('Google OAuth not configured, redirecting to login');
+    console.log('⚠️ Google OAuth not configured, redirecting to login');
     res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_not_configured`);
   });
 }
@@ -268,9 +289,10 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
         const user = req.user as any;
         const token = generateToken(user);
         
-        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+        const redirectTo = user.role === 'ADMIN' ? '/admin' : '/dashboard';
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}${redirectTo}?token=${token}`);
       } catch (error) {
-        console.error('Facebook OAuth callback error:', error);
+        console.error('❌ Facebook OAuth callback error:', error);
         res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_error`);
       }
     }
@@ -281,7 +303,7 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
   });
   
   router.get('/facebook/callback', (req, res) => {
-    console.log('Facebook OAuth not configured, redirecting to login');
+    console.log('⚠️ Facebook OAuth not configured, redirecting to login');
     res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_not_configured`);
   });
 }
@@ -297,9 +319,10 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
         const user = req.user as any;
         const token = generateToken(user);
         
-        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}?token=${token}`);
+        const redirectTo = user.role === 'ADMIN' ? '/admin' : '/dashboard';
+        res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}${redirectTo}?token=${token}`);
       } catch (error) {
-        console.error('GitHub OAuth callback error:', error);
+        console.error('❌ GitHub OAuth callback error:', error);
         res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_error`);
       }
     }
@@ -310,7 +333,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   });
   
   router.get('/github/callback', (req, res) => {
-    console.log('GitHub OAuth not configured, redirecting to login');
+    console.log('⚠️ GitHub OAuth not configured, redirecting to login');
     res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/login?error=oauth_not_configured`);
   });
 }

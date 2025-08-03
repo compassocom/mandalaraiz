@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,20 +73,6 @@ export const LoginPage = () => {
 
   const handleSocialLogin = (provider: string) => {
     window.location.href = `/api/auth/${provider}`;
-  };
-
-  const handleAdminLogin = () => {
-    setFormData({
-      email: 'admin@mandalaraiz.org',
-      password: 'admin123'
-    });
-  };
-
-  const handleModeratorLogin = () => {
-    setFormData({
-      email: 'moderator@mandalaraiz.org',
-      password: 'moderator123'
-    });
   };
 
   return (
@@ -212,45 +197,24 @@ export const LoginPage = () => {
         {/* Admin Credentials Section */}
         <Card className="mt-6 bg-blue-50 border-blue-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-blue-800">Acesso Administrativo</CardTitle>
+            <CardTitle className="text-sm text-blue-800">Contas de Teste</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-xs">
-            <div className="space-y-2">
-              <div>
-                <span className="font-medium text-blue-700">Administrador:</span>
-                <div className="text-blue-600">Email: admin@mandalaraiz.org</div>
-                <div className="text-blue-600">Senha: admin123</div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAdminLogin}
-                className="w-full text-xs"
-              >
-                Login como Admin
-              </Button>
+            <div>
+              <div className="font-medium text-blue-700 mb-1">Administrador:</div>
+              <div className="text-blue-600">Email: admin@mandalaraiz.org</div>
+              <div className="text-blue-600">Senha: admin123</div>
             </div>
             
-            <div className="space-y-2">
-              <div>
-                <span className="font-medium text-blue-700">Moderador:</span>
-                <div className="text-blue-600">Email: moderator@mandalaraiz.org</div>
-                <div className="text-blue-600">Senha: moderator123</div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleModeratorLogin}
-                className="w-full text-xs"
-              >
-                Login como Moderador
-              </Button>
+            <div>
+              <div className="font-medium text-blue-700 mb-1">Moderador:</div>
+              <div className="text-blue-600">Email: moderator@mandalaraiz.org</div>
+              <div className="text-blue-600">Senha: moderator123</div>
             </div>
             
-            <div className="text-xs text-blue-500 mt-2">
-              * Login social disponível quando as credenciais OAuth estiverem configuradas
+            <div className="text-xs text-blue-500 mt-2 pt-2 border-t border-blue-200">
+              * Use as credenciais acima nos campos de login<br/>
+              * Login social disponível quando configurado
             </div>
           </CardContent>
         </Card>
@@ -260,8 +224,8 @@ export const LoginPage = () => {
             Ao entrar, você concorda com nossos{' '}
             <Link to="/agreement" className="text-phase-dream hover:underline">
               Termos de Uso
-            </Link>{' '}
-            e{' '}
+            </Link>
+            {' '}e{' '}
             <Link to="/privacy" className="text-phase-dream hover:underline">
               Política de Privacidade
             </Link>
