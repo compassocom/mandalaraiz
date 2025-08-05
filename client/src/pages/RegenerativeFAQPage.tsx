@@ -47,6 +47,10 @@ export const RegenerativeFAQPage = () => {
     {
       question: "Posso criar múltiplos sonhos?",
       answer: "Sim! Você pode criar quantos sonhos quiser e participar de múltiplos projetos simultaneamente. A plataforma foi projetada para apoiar pessoas ativas na comunidade."
+    },
+    {
+      question: "Como fazer login na plataforma?",
+      answer: "Você pode fazer login com email/senha ou usar login social com Google, Facebook ou GitHub (quando configurados). Também existem contas de teste: admin@mandalaraiz.org (senha: admin123) e moderator@mandalaraiz.org (senha: moderator123)."
     }
   ];
 

@@ -67,7 +67,6 @@ export interface EnergyLog {
   recorded_at: string;
 }
 
-// Marketplace Interfaces (without token economy)
 export interface MarketplaceListing {
   id: number;
   seller_id: number;

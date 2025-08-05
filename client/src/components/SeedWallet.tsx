@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, CheckCircle } from 'lucide-react';
+import { Users, Calendar, CheckCircle, Target } from 'lucide-react';
 
 interface SeedWalletProps {
   userId: number;
@@ -13,7 +13,7 @@ export const SeedWallet = ({ userId }: SeedWalletProps) => {
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center">
             <Users className="mr-2 h-5 w-5" />
-            Participação
+            Participação Comunitária
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center">
@@ -42,12 +42,27 @@ export const SeedWallet = ({ userId }: SeedWalletProps) => {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center">
-              <Calendar className="mr-2 h-4 w-4 text-blue-600" />
-              Projetos Ativos
+              <Target className="mr-2 h-4 w-4 text-blue-600" />
+              Sonhos Criados
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">0</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Sonhos que você iniciou
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center">
+              <Calendar className="mr-2 h-4 w-4 text-purple-600" />
+              Projetos Ativos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">0</div>
             <p className="text-xs text-muted-foreground mt-1">
               Sonhos que você está participando
             </p>

@@ -11,7 +11,7 @@ export const Footer = () => {
           <div>
             <h3 className="font-bold text-lg mb-4">Mandala Raiz</h3>
             <p className="text-sm text-muted-foreground">
-              Plataforma geolocada de co-criação comunitária com economia regenerativa
+              Plataforma geolocada de co-criação comunitária
             </p>
           </div>
           
@@ -29,7 +29,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li><Link to="/principles" className="text-muted-foreground hover:text-foreground">Princípios Dragon</Link></li>
               <li><Link to="/agreement" className="text-muted-foreground hover:text-foreground">Acordo de Cuidado</Link></li>
-              <li><Link to="/faq" className="text-muted-foreground hover:text-foreground">FAQ Regenerativo</Link></li>
+              <li><Link to="/faq" className="text-muted-foreground hover:text-foreground">FAQ</Link></li>
             </ul>
           </div>
           
@@ -164,15 +164,6 @@ export const Footer = () => {
                       ├── package.json<br/>
                       └── node_modules/
                     </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">4. Exemplos de Configuração</h4>
-                  <div className="text-sm space-y-1">
-                    <div><strong>DigitalOcean:</strong> <code>root@164.90.xxx.xxx</code></div>
-                    <div><strong>AWS:</strong> <code>ubuntu@ec2-xxx.compute.amazonaws.com</code></div>
-                    <div><strong>VPS Local:</strong> <code>admin@192.168.1.100</code></div>
                   </div>
                 </div>
               </CardContent>
