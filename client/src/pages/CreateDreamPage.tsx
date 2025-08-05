@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { GoogleMap } from '@/components/GoogleMap';
+import LeafletMap from '@/components/LeafletMap';
 import { MapPin, ArrowLeft } from 'lucide-react';
 
 export const CreateDreamPage = () => {
@@ -282,7 +282,7 @@ export const CreateDreamPage = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[400px] rounded-md overflow-hidden">
-                <GoogleMap
+                <LeafletMap
                   center={{
                     lat: formData.location_lat,
                     lng: formData.location_lng,
@@ -297,7 +297,6 @@ export const CreateDreamPage = () => {
                         lng: formData.location_lng,
                       },
                       title: 'Localização do Sonho',
-                      phase: 'DREAM',
                     },
                   ]}
                   className="w-full h-full"
