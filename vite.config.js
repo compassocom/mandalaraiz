@@ -6,6 +6,12 @@ export const vitePort = 3000;
 
 export default defineConfig(({ mode }) => {
   return {
+    // --- A CORREÇÃO ESTÁ AQUI ---
+    // Força o Vite a gerar todos os caminhos de arquivos (CSS, JS, imagens)
+    // a partir do diretório raiz. Isso corrige os erros 404 na Vercel.
+    base: '/',
+    // -------------------------
+
     plugins: [
       react(),
       // Custom plugin to handle source map requests
