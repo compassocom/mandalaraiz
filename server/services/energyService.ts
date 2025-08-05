@@ -2,144 +2,164 @@ import { db } from '../db/index.js';
 import { EnergyLog } from '../db/schema.js';
 
 export class EnergyService {
-  // Calculate health score based on task completion and activity
-  async calculateHealthScore(dreamId: number): Promise<number> {
-    const tasks = await db
-      .selectFrom('tasks')
+  constructor() {
+    console.log('EnergyService initialized');
+  }
+
+  // Get current energy status for a dream
+  async getCurrentEnergyStatus(dreamId: number): Promise<{
+    health_score: number;
+    collaboration_wave: number;
+    diversity_gauge: number;
+    recorded_at: string;
+  }> {
+    // Get the latest energy log for this dream
+    const latestLog = await db
+      .selectFrom('energy_logs')
       .selectAll()
       .where('dream_id', '=', dreamId)
-      .execute();
+      .orderBy('recorded_at', 'desc')
+      .executeTakeFirst();
 
-    if (tasks.length === 0) return 0.5; // Neutral for new dreams
-
-    const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
-    const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS').length;
-    const overdueTasks = tasks.filter(t => 
-      t.due_date && new Date(t.due_date) < new Date() && t.status !== 'COMPLETED'
-    ).length;
-
-    let score = 0;
-    
-    // Completion rate (40% of score)
-    if (tasks.length > 0) {
-      score += (completedTasks / tasks.length) * 0.4;
+    if (latestLog) {
+      return {
+        health_score: latestLog.health_score,
+        collaboration_wave: latestLog.collaboration_wave,
+        diversity_gauge: latestLog.diversity_gauge,
+        recorded_at: latestLog.recorded_at
+      };
     }
 
-    // Activity level (30% of score)
-    score += Math.min(inProgressTasks / 3, 1) * 0.3;
-
-    // Penalty for overdue tasks (30% of score)
-    const overdueRate = tasks.length > 0 ? overdueTasks / tasks.length : 0;
-    score += (1 - overdueRate) * 0.3;
-
-    return Math.max(0, Math.min(1, score));
-  }
-
-  // Calculate collaboration wave based on recent activity
-  async calculateCollaborationWave(dreamId: number): Promise<number> {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    // Recent task activity
-    const recentTasks = await db
-      .selectFrom('tasks')
-      .selectAll()
-      .where('dream_id', '=', dreamId)
-      .where('updated_at', '>=', sevenDaysAgo.toISOString())
-      .execute();
-
-    // Recent participant joins
-    const recentParticipants = await db
-      .selectFrom('dream_participants')
-      .selectAll()
-      .where('dream_id', '=', dreamId)
-      .where('joined_at', '>=', sevenDaysAgo.toISOString())
-      .execute();
-
-    // Calculate wave intensity
-    const taskActivity = Math.min(recentTasks.length / 5, 1); // Max 5 tasks per week
-    const participantActivity = Math.min(recentParticipants.length / 2, 1); // Max 2 new participants per week
-
-    const wave = (taskActivity * 0.7) + (participantActivity * 0.3);
-    return Math.max(0, Math.min(1, wave));
-  }
-
-  // Calculate diversity gauge based on participant variety
-  async calculateDiversityGauge(dreamId: number): Promise<number> {
-    const participants = await db
-      .selectFrom('dream_participants')
-      .innerJoin('users', 'users.id', 'dream_participants.user_id')
-      .select(['users.id', 'users.email'])
-      .where('dream_participants.dream_id', '=', dreamId)
-      .execute();
-
-    if (participants.length === 0) return 0;
-
-    // Simple diversity metric based on participant count
-    // In a real implementation, this could consider skills, backgrounds, etc.
-    const diversityScore = Math.min(participants.length / 8, 1); // Optimal around 8 participants
+    // If no log exists, calculate and create one
+    const energyData = await this.calculateEnergyMetrics(dreamId);
     
-    return diversityScore;
-  }
-
-  // Record energy metrics
-  async recordEnergyMetrics(dreamId: number): Promise<EnergyLog> {
-    const healthScore = await this.calculateHealthScore(dreamId);
-    const collaborationWave = await this.calculateCollaborationWave(dreamId);
-    const diversityGauge = await this.calculateDiversityGauge(dreamId);
-
-    const energyLog = await db
+    // Save the calculated metrics
+    await db
       .insertInto('energy_logs')
       .values({
         dream_id: dreamId,
-        health_score: healthScore,
-        collaboration_wave: collaborationWave,
-        diversity_gauge: diversityGauge,
-        recorded_at: new Date().toISOString(),
+        health_score: energyData.health_score,
+        collaboration_wave: energyData.collaboration_wave,
+        diversity_gauge: energyData.diversity_gauge,
+        recorded_at: new Date().toISOString()
       })
-      .returning(['id', 'dream_id', 'health_score', 'collaboration_wave', 'diversity_gauge', 'recorded_at'])
-      .executeTakeFirstOrThrow();
-
-    console.log(`Recorded energy metrics for dream ${dreamId}: Health=${healthScore.toFixed(2)}, Wave=${collaborationWave.toFixed(2)}, Diversity=${diversityGauge.toFixed(2)}`);
-    return energyLog;
-  }
-
-  // Get energy history for visualization
-  async getEnergyHistory(dreamId: number, days: number = 30): Promise<EnergyLog[]> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    return await db
-      .selectFrom('energy_logs')
-      .selectAll()
-      .where('dream_id', '=', dreamId)
-      .where('recorded_at', '>=', startDate.toISOString())
-      .orderBy('recorded_at', 'desc')
       .execute();
+
+    return energyData;
   }
 
-  // Get current energy status
-  async getCurrentEnergyStatus(dreamId: number) {
-    const latest = await db
-      .selectFrom('energy_logs')
-      .selectAll()
-      .where('dream_id', '=', dreamId)
-      .orderBy('recorded_at', 'desc')
-      .limit(1)
+  // Calculate energy metrics for a dream
+  private async calculateEnergyMetrics(dreamId: number): Promise<{
+    health_score: number;
+    collaboration_wave: number;
+    diversity_gauge: number;
+    recorded_at: string;
+  }> {
+    // Get dream info
+    const dream = await db
+      .selectFrom('dreams')
+      .select(['participant_limit', 'activation_threshold', 'created_at'])
+      .where('id', '=', dreamId)
       .executeTakeFirst();
 
-    if (!latest) {
-      // Calculate and record if no history exists
-      return await this.recordEnergyMetrics(dreamId);
+    if (!dream) {
+      return {
+        health_score: 0,
+        collaboration_wave: 0,
+        diversity_gauge: 0,
+        recorded_at: new Date().toISOString()
+      };
     }
 
-    return latest;
+    // Get participant count
+    const participantCount = await db
+      .selectFrom('dream_participants')
+      .select((eb) => eb.fn.countAll().as('count'))
+      .where('dream_id', '=', dreamId)
+      .executeTakeFirst();
+
+    const participants = Number(participantCount?.count || 0);
+
+    // Get task completion stats
+    const taskStats = await db
+      .selectFrom('tasks')
+      .select([
+        (eb) => eb.fn.countAll<number>().as('total_tasks'),
+        (eb) => eb.fn.count<number>('id').filterWhere('status', '=', 'COMPLETED').as('completed_tasks'),
+        (eb) => eb.fn.count<number>('id').filterWhere('status', '=', 'IN_PROGRESS').as('in_progress_tasks')
+      ])
+      .where('dream_id', '=', dreamId)
+      .executeTakeFirst();
+
+    const totalTasks = Number(taskStats?.total_tasks || 0);
+    const completedTasks = Number(taskStats?.completed_tasks || 0);
+    const inProgressTasks = Number(taskStats?.in_progress_tasks || 0);
+
+    // Calculate metrics (0-100 scale)
+    
+    // Health Score: based on task completion and participant engagement
+    let health_score = 50; // Base score
+    if (totalTasks > 0) {
+      const completionRate = completedTasks / totalTasks;
+      const progressRate = (completedTasks + inProgressTasks) / totalTasks;
+      health_score = Math.min(100, 30 + (completionRate * 40) + (progressRate * 30));
+    }
+
+    // Collaboration Wave: based on participant count vs limits
+    let collaboration_wave = 25; // Base score
+    if (participants >= dream.activation_threshold) {
+      const participationRate = Math.min(1, participants / dream.participant_limit);
+      collaboration_wave = Math.min(100, 40 + (participationRate * 60));
+    }
+
+    // Diversity Gauge: based on different creators of tasks and participants
+    const uniqueCreators = await db
+      .selectFrom('tasks')
+      .select((eb) => eb.fn.count('creator_id').distinct().as('unique_creators'))
+      .where('dream_id', '=', dreamId)
+      .executeTakeFirst();
+
+    const creators = Number(uniqueCreators?.unique_creators || 0);
+    let diversity_gauge = 30; // Base score
+    if (participants > 0) {
+      const diversityRate = Math.min(1, creators / Math.max(1, participants));
+      diversity_gauge = Math.min(100, 20 + (diversityRate * 80));
+    }
+
+    console.log(`Calculated energy for dream ${dreamId}: health=${health_score}, collaboration=${collaboration_wave}, diversity=${diversity_gauge}`);
+
+    return {
+      health_score: Math.round(health_score),
+      collaboration_wave: Math.round(collaboration_wave),
+      diversity_gauge: Math.round(diversity_gauge),
+      recorded_at: new Date().toISOString()
+    };
   }
 
-  // Get traffic light status for health
-  getHealthStatus(healthScore: number): 'GREEN' | 'YELLOW' | 'RED' {
-    if (healthScore >= 0.7) return 'GREEN';
-    if (healthScore >= 0.4) return 'YELLOW';
-    return 'RED';
+  // Get health status description
+  getHealthStatus(healthScore: number): string {
+    if (healthScore >= 80) return 'Florescendo';
+    if (healthScore >= 60) return 'Saudável';
+    if (healthScore >= 40) return 'Crescendo';
+    if (healthScore >= 20) return 'Frágil';
+    return 'Dormindo';
+  }
+
+  // Update energy metrics for a dream (can be called periodically)
+  async updateEnergyMetrics(dreamId: number): Promise<void> {
+    const energyData = await this.calculateEnergyMetrics(dreamId);
+    
+    await db
+      .insertInto('energy_logs')
+      .values({
+        dream_id: dreamId,
+        health_score: energyData.health_score,
+        collaboration_wave: energyData.collaboration_wave,
+        diversity_gauge: energyData.diversity_gauge,
+        recorded_at: new Date().toISOString()
+      })
+      .execute();
+
+    console.log(`Updated energy metrics for dream ${dreamId}`);
   }
 }

@@ -54,12 +54,12 @@ export class MarketplaceService {
 
     // Apply filters
     if (filters.category) {
-      query = query.where('marketplace_listings.category', '=', filters.category);
+      query = query.where('marketplace_listings.category', '=', filters.category as any);
     }
 
     if (filters.searchTerm) {
       const searchTerm = `%${filters.searchTerm}%`;
-      query = query.where(eb => 
+      query = query.where((eb) => 
         eb.or([
           eb('marketplace_listings.title', 'like', searchTerm),
           eb('marketplace_listings.description', 'like', searchTerm)
@@ -68,25 +68,27 @@ export class MarketplaceService {
     }
 
     // Get total count first
-    const countResult = await db
+    const countQuery = db
       .selectFrom('marketplace_listings')
-      .select(eb => eb.fn.countAll().as('count'))
+      .select((eb) => eb.fn.countAll().as('count'))
       .where('marketplace_listings.is_active', '=', true)
-      .where('marketplace_listings.is_approved', '=', true)
-      .$if(Boolean(filters.category), (qb) => 
-        qb.where('marketplace_listings.category', '=', filters.category!)
-      )
-      .$if(Boolean(filters.searchTerm), (qb) => {
-        const searchTerm = `%${filters.searchTerm}%`;
-        return qb.where(eb => 
-          eb.or([
-            eb('marketplace_listings.title', 'like', searchTerm),
-            eb('marketplace_listings.description', 'like', searchTerm)
-          ])
-        );
-      })
-      .executeTakeFirst();
+      .where('marketplace_listings.is_approved', '=', true);
 
+    if (filters.category) {
+      countQuery.where('marketplace_listings.category', '=', filters.category as any);
+    }
+
+    if (filters.searchTerm) {
+      const searchTerm = `%${filters.searchTerm}%`;
+      countQuery.where((eb) => 
+        eb.or([
+          eb('marketplace_listings.title', 'like', searchTerm),
+          eb('marketplace_listings.description', 'like', searchTerm)
+        ])
+      );
+    }
+
+    const countResult = await countQuery.executeTakeFirst();
     const total = Number(countResult?.count || 0);
 
     // Get listings with pagination
