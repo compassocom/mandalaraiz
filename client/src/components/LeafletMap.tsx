@@ -17,25 +17,32 @@ import L from 'leaflet';
 
 
 // --- Correção para o ícone do marcador ---
-// Fix for leaflet marker icons in Vite/React
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+const DefaultIcon = L.icon({
+    iconUrl,
+    iconRetinaUrl,
+    shadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
+
+L.Marker.prototype.options.icon = DefaultIcon;
 // --- Fim da correção do ícone ---
 
 // Componente auxiliar para recentralizar o mapa quando a localização muda
-function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }) {
+function ChangeView({ center, zoom }) {
   const map = useMap();
   map.setView(center, zoom);
   return null;
 }
 
 // Componente auxiliar para lidar com cliques no mapa
-function MapClickHandler({ onLocationSelect }: { onLocationSelect: (location: { lat: number; lng: number }) => void }) {
+function MapClickHandler({ onLocationSelect }) {
   useMapEvents({
     click(e) {
       // Quando o mapa é clicado, chama a função passada via props
@@ -164,6 +171,35 @@ export default LeafletMap;
           lng: formData.location_lng,
         },
         title: 'Localização do Sonho',
+      },
+    ]}
+    className="w-full h-full"
+  />
+</div>
+*/
+
+// --- Como usar este componente na sua DreamPage.tsx ---
+// 1. No seu ficheiro 'DreamPage.tsx', remova a importação do GoogleMap
+//    e importe o LeafletMap:
+//    import LeafletMap from '@/components/LeafletMap'; // ou o caminho correto
+//
+// 2. Substitua o componente <GoogleMap ... /> por este:
+/*
+<div className="h-[300px] rounded-md overflow-hidden">
+  <LeafletMap
+    center={{
+      lat: dream.location_lat,
+      lng: dream.location_lng,
+    }}
+    zoom={15}
+    markers={[
+      {
+        id: dream.id.toString(),
+        position: {
+          lat: dream.location_lat,
+          lng: dream.location_lng,
+        },
+        title: dream.title,
       },
     ]}
     className="w-full h-full"

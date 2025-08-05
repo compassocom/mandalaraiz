@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GoogleMap } from '@/components/GoogleMap';
+import LeafletMap from '@/components/LeafletMap';
 import { ArrowLeft, MapPin, Users, Activity } from 'lucide-react';
 import { EnergyDashboard } from '@/components/EnergyDashboard';
 import { TaskList } from '@/components/TaskList';
@@ -158,7 +158,7 @@ export const DreamPage = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] rounded-md overflow-hidden">
-                <GoogleMap
+                <LeafletMap
                   center={{
                     lat: dream.location_lat,
                     lng: dream.location_lng,
@@ -172,7 +172,6 @@ export const DreamPage = () => {
                         lng: dream.location_lng,
                       },
                       title: dream.title,
-                      phase: dream.phase,
                     },
                   ]}
                   className="w-full h-full"
