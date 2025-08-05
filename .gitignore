@@ -1,3 +1,6 @@
 node_modules
+<<<<<<< HEAD
 /data/database.sqlite
 /server/.env
+=======
+>>>>>>> a5cbc5a4811e019e9f2d62636703b1a1314c4341
