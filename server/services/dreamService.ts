@@ -1,5 +1,6 @@
 import { db } from '../db/index.js';
 import { Dream, DreamTag } from '../db/schema.js';
+import { sql } from 'kysely';
 
 export class DreamService {
   constructor() {
@@ -15,7 +16,7 @@ export class DreamService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .returning(['id', 'user_id', 'title', 'description', 'location_lat', 'location_lng', 'visibility_radius', 'phase', 'participant_limit', 'activation_threshold', 'is_active', 'created_at', 'updated_at'])
+      .returningAll()
       .executeTakeFirstOrThrow();
 
     // Add tags if provided
@@ -35,54 +36,38 @@ export class DreamService {
     return dream;
   }
 
-  // Find nearby dreams within a given radius
+  // --- FUNÇÃO CORRIGIDA ---
+  // Find nearby dreams within a given radius using a raw SQL query for performance
   async findNearbyDreams(lat: number, lng: number, radiusMeters: number = 2000): Promise<any[]> {
-    // Simple distance calculation using Haversine formula approximation
-    const dreams = await db
-      .selectFrom('dreams')
-      .leftJoin('users', 'dreams.user_id', 'users.id')  
-      .leftJoin('dream_tags', 'dreams.id', 'dream_tags.dream_id')
-      .select([
-        'dreams.id',
-        'dreams.title',
-        'dreams.description',
-        'dreams.location_lat',
-        'dreams.location_lng',
-        'dreams.phase',
-        'dreams.participant_limit',
-        'dreams.activation_threshold',
-        'dreams.is_active',
-        'dreams.created_at',
-        'users.name as creator_name',
-        'dream_tags.tag'
-      ])
-      .where('dreams.is_active', '=', true)
-      .execute();
+    // Esta query usa a fórmula de Haversine diretamente no Postgres para calcular
+    // a distância e filtrar os resultados de forma eficiente.
+    const dreams = await sql<any>`
+      SELECT 
+        d.id, d.title, d.description, d.location_lat, d.location_lng,
+        d.phase, d.participant_limit, d.is_active,
+        (
+          6371000 * acos(
+            cos(radians(${lat})) * cos(radians(d.location_lat)) *
+            cos(radians(d.location_lng) - radians(${lng})) +
+            sin(radians(${lat})) * sin(radians(d.location_lat))
+          )
+        ) AS distance
+      FROM dreams d
+      WHERE d.is_active = true
+      HAVING (
+        6371000 * acos(
+          cos(radians(${lat})) * cos(radians(d.location_lat)) *
+          cos(radians(d.location_lng) - radians(${lng})) +
+          sin(radians(${lat})) * sin(radians(d.location_lat))
+        )
+      ) <= ${radiusMeters}
+      ORDER BY distance;
+    `.execute(db);
 
-    // Filter by distance and group tags
-    const dreamsWithDistance = dreams.map(dream => {
-      const distance = this.calculateDistance(lat, lng, dream.location_lat, dream.location_lng);
-      return { ...dream, distance };
-    }).filter(dream => dream.distance <= radiusMeters);
-
-    // Group by dream and collect tags
-    const dreamMap = new Map();
-    dreamsWithDistance.forEach(dream => {
-      if (!dreamMap.has(dream.id)) {
-        dreamMap.set(dream.id, {
-          ...dream,
-          tags: []
-        });
-      }
-      if (dream.tag) {
-        dreamMap.get(dream.id).tags.push(dream.tag);
-      }
-    });
-
-    const result = Array.from(dreamMap.values()).sort((a, b) => a.distance - b.distance);
-    console.log(`Found ${result.length} dreams within ${radiusMeters}m of (${lat}, ${lng})`);
-    return result;
+    console.log(`Found ${dreams.rows.length} dreams within ${radiusMeters}m of (${lat}, ${lng})`);
+    return dreams.rows;
   }
+
 
   // Get detailed dream information
   async getDreamDetails(dreamId: number): Promise<any | null> {
@@ -119,21 +104,23 @@ export class DreamService {
       .where('dream_id', '=', dreamId)
       .execute();
 
-    // Get participants count
-    const participantCount = await db
+    // Get participants
+    const participants = await db
       .selectFrom('dream_participants')
-      .select((eb) => eb.fn.countAll().as('count'))
+      .innerJoin('users', 'dream_participants.user_id', 'users.id')
+      .select(['users.id', 'users.name', 'users.email', 'dream_participants.joined_at'])
       .where('dream_id', '=', dreamId)
-      .executeTakeFirst();
+      .execute();
 
     return {
       ...dream,
       tags: tags.map(t => t.tag),
-      participant_count: Number(participantCount?.count || 0)
+      participants: participants
     };
   }
 
-  // Helper function to calculate distance between two points
+  // As funções de ajuda para cálculo em JS já não são necessárias para a busca,
+  // mas podem ser úteis noutros locais.
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371000; // Earth's radius in meters
     const dLat = this.toRadians(lat2 - lat1);
