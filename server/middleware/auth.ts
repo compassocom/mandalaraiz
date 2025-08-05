@@ -1,18 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { db } from '../db/index.js';
+import { User } from '../db/schema.js';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        email: string;
-        role: 'USER' | 'MODERATOR' | 'ADMIN';
-      };
-    }
-  }
+// JWT payload interface
+interface JWTPayload {
+  userId: number;
+  iat?: number;
+  exp?: number;
 }
+
+// User type is declared in server/index.ts to avoid conflicts
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -24,11 +22,11 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'development-secret') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'development-secret') as JWTPayload;
     
     const user = await db
       .selectFrom('users')
-      .select(['id', 'email', 'role'])
+      .select(['id', 'email', 'name', 'location_lat', 'location_lng', 'role', 'avatar_url', 'created_at', 'updated_at'])
       .where('id', '=', decoded.userId)
       .executeTakeFirst();
 

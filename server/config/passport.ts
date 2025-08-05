@@ -58,7 +58,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .returning(['id', 'email', 'name', 'role', 'google_id', 'avatar_url', 'created_at'])
+        .returning(['id', 'email', 'name', 'location_lat', 'location_lng', 'role', 'google_id', 'avatar_url', 'created_at', 'updated_at'])
         .executeTakeFirstOrThrow();
 
       return done(null, newUser);
@@ -121,7 +121,7 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .returning(['id', 'email', 'name', 'role', 'facebook_id', 'avatar_url', 'created_at'])
+        .returning(['id', 'email', 'name', 'location_lat', 'location_lng', 'role', 'facebook_id', 'avatar_url', 'created_at', 'updated_at'])
         .executeTakeFirstOrThrow();
 
       return done(null, newUser);
@@ -183,7 +183,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .returning(['id', 'email', 'name', 'role', 'github_id', 'avatar_url', 'created_at'])
+        .returning(['id', 'email', 'name', 'location_lat', 'location_lng', 'role', 'github_id', 'avatar_url', 'created_at', 'updated_at'])
         .executeTakeFirstOrThrow();
 
       return done(null, newUser);
@@ -203,7 +203,7 @@ passport.deserializeUser(async (id: number, done) => {
   try {
     const user = await db
       .selectFrom('users')
-      .select(['id', 'email', 'name', 'role', 'avatar_url'])
+      .select(['id', 'email', 'name', 'location_lat', 'location_lng', 'role', 'avatar_url', 'created_at', 'updated_at'])
       .where('id', '=', id)
       .executeTakeFirst();
     
