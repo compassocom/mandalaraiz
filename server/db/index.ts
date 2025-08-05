@@ -17,3 +17,14 @@ export const db = new Kysely<DatabaseSchema>({
 });
 
 console.log('Database dialect configured for Vercel Postgres');
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  location_lat: number | null;
+  location_lng: number | null;
+  role: 'USER' | 'ADMIN';
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
