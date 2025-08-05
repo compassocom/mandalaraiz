@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GoogleMap } from '@/components/GoogleMap';
+import LeafletMap from '@/components/LeafletMap'; // ou o caminho correto
 import { ArrowLeft, MapPin, Users, Plus, Map, AlertCircle } from 'lucide-react';
 
 interface Dream {
@@ -237,7 +237,7 @@ export const DashboardPage = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[500px] rounded-md overflow-hidden">
-              <GoogleMap
+              <LeafletMap
                 center={userLocation}
                 zoom={13}
                 markers={dreams.map(dream => ({
@@ -247,7 +247,6 @@ export const DashboardPage = () => {
                     lng: dream.location_lng,
                   },
                   title: dream.title,
-                  phase: dream.phase,
                   onClick: () => navigate(`/dream/${dream.id}`),
                 }))}
                 className="w-full h-full"
