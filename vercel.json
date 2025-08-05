@@ -1,4 +1,10 @@
 {
+  "version": 2,
+  "functions": {
+    "server/index.ts": {
+      "memory": 1024
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
