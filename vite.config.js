@@ -52,7 +52,7 @@ export default defineConfig(({ mode }) => {
               res.statusCode = 204;
               return res.end();
             }
-
+a
             next();
           });
         },
@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => {
     },
     root: path.join(process.cwd(), 'client'),
     build: {
-      outDir: path.join(process.cwd(), 'dist/public'),
+      outDir: path.join(process.cwd(), 'dist'),
       emptyOutDir: true,
     },
     clearScreen: false,
