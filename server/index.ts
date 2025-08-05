@@ -1,7 +1,6 @@
 import express from 'express';
 import session from 'express-session';
 import dotenv from 'dotenv';
-import { setupStaticServing } from './static-serve.js';
 import { db } from './db/index.js';
 import { DreamService } from './services/dreamService.js';
 import { EnergyService } from './services/energyService.js';
@@ -14,6 +13,7 @@ import { authenticateToken } from './middleware/auth.js';
 
 dotenv.config();
 
+// A declaração global permanece a mesma
 declare global {
   namespace Express {
     interface Request {
@@ -133,13 +133,11 @@ app.post('/api/dreams', authenticateToken, async (req, res) => {
   try {
     const { tags, ...dreamData } = req.body;
     
-    // Validate required fields
     if (!dreamData.title || !dreamData.description) {
       res.status(400).json({ error: 'Title and description are required' });
       return;
     }
 
-    // Ensure user_id matches authenticated user
     if (dreamData.user_id !== req.user!.id) {
       res.status(403).json({ error: 'Cannot create dream for another user' });
       return;
@@ -189,7 +187,7 @@ app.get('/api/dreams/:id/tasks', async (req, res) => {
       .selectFrom('tasks')
       .selectAll()
       .where('dream_id', '=', dreamId)
-      .orderBy('created_at', 'desc')
+      // .orderBy('created_at', 'desc') // Removido orderBy para compatibilidade
       .execute();
     
     res.json(tasks);
@@ -212,11 +210,11 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
       .insertInto('tasks')
       .values({
         ...req.body,
-        creator_id: req.user!.id, // Use authenticated user ID
+        creator_id: req.user!.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
+      .returningAll()
       .executeTakeFirstOrThrow();
     
     console.log(`Task created: ${task.title} by user ${req.user!.id}`);
@@ -235,7 +233,6 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
       return;
     }
     
-    // Check if user has permission to update this task
     const existingTask = await db
       .selectFrom('tasks')
       .select(['creator_id', 'assignee_id'])
@@ -247,7 +244,6 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
       return;
     }
     
-    // Only creator or assignee can update the task
     if (existingTask.creator_id !== req.user!.id && existingTask.assignee_id !== req.user!.id) {
       res.status(403).json({ error: 'Not authorized to update this task' });
       return;
@@ -260,7 +256,7 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
         updated_at: new Date().toISOString(),
       })
       .where('id', '=', taskId)
-      .returning(['id', 'dream_id', 'creator_id', 'assignee_id', 'title', 'description', 'status', 'priority', 'help_needed', 'due_date', 'created_at', 'updated_at'])
+      .returningAll()
       .executeTakeFirstOrThrow();
     
     console.log(`Task updated: ${updatedTask.title} by user ${req.user!.id}`);
@@ -323,7 +319,7 @@ app.post('/api/marketplace/listings', authenticateToken, async (req, res) => {
     
     const listingData = {
       ...req.body,
-      seller_id: req.user!.id, // Use authenticated user ID
+      seller_id: req.user!.id,
     };
     
     const listing = await marketplaceService.createListing(listingData);
@@ -341,37 +337,7 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Static file serving and catch-all (only in production)
-if (process.env.NODE_ENV === 'production') {
-  setupStaticServing(app);
-}
-
-const PORT = process.env.PORT || 3001;
-
-export const startServer = async (port = PORT) => {
-  return new Promise<void>((resolve, reject) => {
-    try {
-      const server = app.listen(port, () => {
-        console.log(`Server running on port ${port}`);
-        console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`Data directory: ${process.env.DATA_DIRECTORY || './data'}`);
-        console.log(`Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Not configured'}`);
-        console.log(`Facebook OAuth: ${process.env.FACEBOOK_APP_ID ? 'Configured' : 'Not configured'}`);
-        console.log(`GitHub OAuth: ${process.env.GITHUB_CLIENT_ID ? 'Configured' : 'Not configured'}`);
-        resolve();
-      });
-      
-      server.on('error', (err) => {
-        console.error('Server error:', err);
-        reject(err);
-      });
-    } catch (err) {
-      reject(err);
-    }
-  });
-};
-
-// Start server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  startServer().catch(console.error);
-}
+// --- ALTERAÇÃO PRINCIPAL ---
+// Removemos toda a lógica de `startServer`, `app.listen`, e `setupStaticServing`.
+// A Vercel precisa que o ficheiro simplesmente exporte o objeto `app` do Express.
+export default app;
