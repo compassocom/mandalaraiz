@@ -19,6 +19,20 @@ export class DreamService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    // --- NOVA LÓGICA ADICIONADA AQUI ---
+    // Adiciona automaticamente o criador como o primeiro participante.
+    await db
+      .insertInto('dream_participants')
+      .values({
+        dream_id: dream.id,
+        user_id: dream.user_id, // O ID do criador do sonho
+        joined_at: new Date().toISOString()
+      })
+      .execute();
+      
+    console.log(`Creator ${dream.user_id} automatically added as participant to dream ${dream.id}`);
+    // --- FIM DA NOVA LÓGICA ---
+
     // Add tags if provided
     if (tags.length > 0) {
       const tagData = tags.map(tag => ({

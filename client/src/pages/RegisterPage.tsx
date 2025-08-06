@@ -70,6 +70,7 @@ export const RegisterPage = () => {
       
       // Redirect to dashboard
       navigate('/dashboard');
+      window.location.reload(); // Adicione esta linha para forçar a atualização
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
