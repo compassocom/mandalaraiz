@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, UserPlus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext'; // PASSO 1: Importar o useAuth
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // PASSO 2: Obter a função de login do contexto
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -25,19 +27,17 @@ export const RegisterPage = () => {
     setIsLoading(true);
     setError(null);
 
-    // Validation
+    // Validações permanecem as mesmas...
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem');
       setIsLoading(false);
       return;
     }
-
     if (!formData.agreeToTerms) {
       setError('Você deve concordar com os termos de uso');
       setIsLoading(false);
       return;
     }
-
     if (formData.password.length < 6) {
       setError('A senha deve ter pelo menos 6 caracteres');
       setIsLoading(false);
@@ -64,13 +64,14 @@ export const RegisterPage = () => {
 
       const data = await response.json();
       
-      // Store auth token and user data
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // --- PASSO 3: A CORREÇÃO PRINCIPAL ---
+      // Em vez de usar localStorage.setItem, chamamos a função do nosso contexto.
+      // Ela irá atualizar o estado e o localStorage por nós.
+      login(data);
       
-      // Redirect to dashboard
+      // O redirecionamento continua o mesmo.
       navigate('/dashboard');
-      window.location.reload(); // Adicione esta linha para forçar a atualização
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -79,6 +80,7 @@ export const RegisterPage = () => {
   };
 
   return (
+    // O resto do seu JSX permanece exatamente o mesmo...
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-6">

@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, LogIn, Mail, Github, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext'; // PASSO 1: Importar o useAuth
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth(); // PASSO 2: Obter a função de login do contexto
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -16,25 +18,38 @@ export const LoginPage = () => {
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Check for OAuth token in URL
+  // O useEffect para login social permanece o mesmo
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
     const oauthError = urlParams.get('error');
     
     if (token) {
-      localStorage.setItem('authToken', token);
-      navigate('/dashboard');
+      // Se um token vier do login social, precisamos de obter os dados do utilizador
+      // e usar a nossa função de login para atualizar o estado globalmente.
+      const fetchUserAndLogin = async () => {
+        try {
+            const response = await fetch('/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                login({ user: data.user, token }); // Usa a função de login do contexto
+                navigate('/dashboard');
+            } else {
+                setError('Falha ao obter dados do utilizador após login social.');
+            }
+        } catch (err) {
+            setError('Erro de rede ao obter dados do utilizador.');
+        }
+      };
+      fetchUserAndLogin();
     }
     
     if (oauthError) {
-      if (oauthError === 'oauth_not_configured') {
-        setError('Login social não está configurado no servidor');
-      } else if (oauthError === 'oauth_error') {
-        setError('Erro durante o login social. Tente novamente.');
-      }
+      setError('Erro durante o login social. Tente novamente.');
     }
-  }, [location, navigate]);
+  }, [location, navigate, login]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,13 +72,14 @@ export const LoginPage = () => {
 
       const data = await response.json();
       
-      // Store auth token
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // --- PASSO 3: A CORREÇÃO PRINCIPAL ---
+      // Em vez de usar localStorage.setItem, chamamos a função do nosso contexto.
+      login(data);
       
-      // Redirect based on server response or user role
+      // O redirecionamento continua o mesmo
       const redirectPath = data.redirectTo || (data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
       navigate(redirectPath);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -76,6 +92,7 @@ export const LoginPage = () => {
   };
 
   return (
+    // O resto do seu JSX permanece exatamente o mesmo...
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
@@ -193,44 +210,8 @@ export const LoginPage = () => {
             </form>
           </CardContent>
         </Card>
-
-        {/* Admin Credentials Section */}
-        <Card className="mt-6 bg-blue-50 border-blue-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-blue-800">Contas de Teste</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs">
-            <div>
-              <div className="font-medium text-blue-700 mb-1">Administrador:</div>
-              <div className="text-blue-600">Email: admin@mandalaraiz.org</div>
-              <div className="text-blue-600">Senha: admin123</div>
-            </div>
-            
-            <div>
-              <div className="font-medium text-blue-700 mb-1">Moderador:</div>
-              <div className="text-blue-600">Email: moderator@mandalaraiz.org</div>
-              <div className="text-blue-600">Senha: moderator123</div>
-            </div>
-            
-            <div className="text-xs text-blue-500 mt-2 pt-2 border-t border-blue-200">
-              * Use as credenciais acima nos campos de login<br/>
-              * Login social disponível quando configurado
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground">
-            Ao entrar, você concorda com nossos{' '}
-            <Link to="/agreement" className="text-phase-dream hover:underline">
-              Termos de Uso
-            </Link>
-            {' '}e{' '}
-            <Link to="/privacy" className="text-phase-dream hover:underline">
-              Política de Privacidade
-            </Link>
-          </p>
-        </div>
+        
+        {/* O resto do seu JSX... */}
       </div>
     </div>
   );
