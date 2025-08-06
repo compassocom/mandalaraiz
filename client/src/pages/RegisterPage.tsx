@@ -69,7 +69,6 @@ export const RegisterPage = () => {
       // Usa a função de login do contexto para atualizar o estado
       login(data);
       
-      // --- A CORREÇÃO PRINCIPAL ---
       // Navega para a nova página e depois força um recarregamento.
       navigate('/dashboard');
       window.location.reload();
@@ -82,7 +81,6 @@ export const RegisterPage = () => {
   };
 
   return (
-    // O resto do seu JSX permanece exatamente o mesmo...
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
@@ -105,14 +103,16 @@ export const RegisterPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Aumentei o espaçamento geral do formulário de space-y-4 para space-y-6 */}
+            <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
                   {error}
                 </div>
               )}
 
-              <div className="space-y-2">
+              {/* Aumentei o espaçamento entre label e input de space-y-2 para space-y-3 */}
+              <div className="space-y-3">
                 <Label htmlFor="name">Nome Completo</Label>
                 <Input
                   id="name"
@@ -123,7 +123,7 @@ export const RegisterPage = () => {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -135,7 +135,7 @@ export const RegisterPage = () => {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="password">Senha</Label>
                 <Input
                   id="password"
@@ -147,7 +147,7 @@ export const RegisterPage = () => {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                 <Input
                   id="confirmPassword"
@@ -159,7 +159,7 @@ export const RegisterPage = () => {
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 pt-2">
                 <Checkbox
                   id="terms"
                   checked={formData.agreeToTerms}

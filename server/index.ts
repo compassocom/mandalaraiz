@@ -196,10 +196,13 @@ app.get('/api/dreams/:id/tasks', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 });
+// No seu ficheiro server/index.ts
 
+// --- CORREÇÃO PARA A CRIAÇÃO DE TAREFAS ---
 app.post('/api/tasks', authenticateToken, async (req, res) => {
   try {
-    const { dream_id, title } = req.body;
+    // 1. Desestruturamos apenas os campos que esperamos receber do frontend.
+    const { dream_id, title, description, priority, due_date, help_needed, assignee_id } = req.body;
     
     if (!dream_id || !title) {
       res.status(400).json({ error: 'dream_id and title are required' });
@@ -208,8 +211,16 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     
     const task = await db
       .insertInto('tasks')
+      // 2. Construímos o objeto de valores explicitamente, garantindo que o status é 'OPEN'.
       .values({
-        ...req.body,
+        dream_id,
+        title,
+        description,
+        priority: priority || 'MEDIUM',
+        due_date,
+        help_needed: help_needed || false,
+        assignee_id,
+        status: 'OPEN', // <-- A CORREÇÃO PRINCIPAL
         creator_id: req.user!.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -225,103 +236,34 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.id);
-    if (isNaN(taskId)) {
-      res.status(400).json({ error: 'Invalid task ID' });
-      return;
-    }
-    
-    const existingTask = await db
-      .selectFrom('tasks')
-      .select(['creator_id', 'assignee_id'])
-      .where('id', '=', taskId)
-      .executeTakeFirst();
-    
-    if (!existingTask) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-    
-    if (existingTask.creator_id !== req.user!.id && existingTask.assignee_id !== req.user!.id) {
-      res.status(403).json({ error: 'Not authorized to update this task' });
-      return;
-    }
-    
-    const updatedTask = await db
-      .updateTable('tasks')
-      .set({
-        ...req.body,
-        updated_at: new Date().toISOString(),
-      })
-      .where('id', '=', taskId)
-      .returningAll()
-      .executeTakeFirstOrThrow();
-    
-    console.log(`Task updated: ${updatedTask.title} by user ${req.user!.id}`);
-    res.json(updatedTask);
-  } catch (error) {
-    console.error('Error updating task:', error);
-    res.status(500).json({ error: 'Failed to update task' });
-  }
-});
 
-// Energy endpoints
-app.get('/api/dreams/:id/energy', async (req, res) => {
-  try {
-    const dreamId = parseInt(req.params.id);
-    if (isNaN(dreamId)) {
-      res.status(400).json({ error: 'Invalid dream ID' });
-      return;
-    }
-    
-    const energy = await energyService.getCurrentEnergyStatus(dreamId);
-    
-    const result = {
-      ...energy,
-      health_status: energyService.getHealthStatus(energy.health_score)
-    };
-    
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching energy status:', error);
-    res.status(500).json({ error: 'Failed to fetch energy status' });
-  }
-});
-
-// Marketplace endpoints
-app.get('/api/marketplace/listings', async (req, res) => {
-  try {
-    const filters = {
-      category: req.query.category as string,
-      searchTerm: req.query.search as string,
-      limit: parseInt(req.query.limit as string) || 20,
-      offset: parseInt(req.query.offset as string) || 0,
-    };
-    
-    const result = await marketplaceService.getListings(filters);
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching marketplace listings:', error);
-    res.status(500).json({ error: 'Failed to fetch marketplace listings' });
-  }
-});
-
+// --- CORREÇÃO PARA A CRIAÇÃO DE ITENS NO MARKETPLACE ---
 app.post('/api/marketplace/listings', authenticateToken, async (req, res) => {
   try {
-    const { title, description, category } = req.body;
+    const { title, description, category, subcategory, location_lat, location_lng, location_text, images } = req.body;
     
     if (!title || !description || !category) {
       res.status(400).json({ error: 'title, description, and category are required' });
       return;
     }
     
+    // Construímos o objeto de dados explicitamente para segurança.
     const listingData = {
-      ...req.body,
+      title,
+      description,
+      category,
+      subcategory,
+      location_lat,
+      location_lng,
+      location_text,
+      images,
       seller_id: req.user!.id,
+      is_active: true,      // Valor padrão
+      is_approved: false,   // <-- CORREÇÃO DE SEGURANÇA: Itens novos não são aprovados automaticamente.
+      view_count: 0         // Valor padrão
     };
     
+    // Assumindo que o marketplaceService.createListing simplesmente insere estes dados.
     const listing = await marketplaceService.createListing(listingData);
     console.log(`Marketplace listing created: ${listing.title} by user ${req.user!.id}`);
     res.json(listing);

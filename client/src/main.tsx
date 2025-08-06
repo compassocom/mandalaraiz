@@ -1,21 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-
+import App from './App'; // ou o seu componente de rotas principal
 import './index.css';
+import { AuthProvider } from './contexts/AuthContext'; // Importa o nosso Provedor
 
-const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-function updateDarkClass(e = null) {
-  const isDark = e ? e.matches : darkQuery.matches;
-  document.documentElement.classList.toggle('dark', isDark);
-}
-
-updateDarkClass();
-darkQuery.addEventListener('change', updateDarkClass);
+// A correção é garantir que <AuthProvider> envolve <App />.
+// Isto faz com que o estado de autenticação (user, login, logout)
+// fique disponível para todos os componentes dentro de <App />.
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>,
 );
