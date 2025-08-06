@@ -44,6 +44,7 @@
     "passport-facebook": "^3.0.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.16.3",
     "react": "18.2.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "18.2.0",
@@ -58,6 +59,7 @@
   "devDependencies": {
     "@types/express": "5.0.0",
     "@types/node": "22.13.5",
+    "@types/pg": "^8.15.5",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "@vitejs/plugin-react": "4.3.4",
