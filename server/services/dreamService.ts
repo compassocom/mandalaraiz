@@ -44,14 +44,14 @@ export class DreamService {
           ( 6371000 * acos( cos( radians(${lat}) ) * cos( radians(d.location_lat) ) * cos( radians(d.location_lng) - radians(${lng}) ) + sin( radians(${lat}) ) * sin( radians(d.location_lat) ) ) )
       `;
 
-      // Esta query foi corrigida para incluir todas as colunas não agregadas na cláusula GROUP BY,
-      // o que satisfaz os requisitos do Postgres.
+      // Esta query foi corrigida para usar a sintaxe de alias correta do Kysely.
       const result = await db
           .selectFrom('dreams as d')
           .select([
               'd.id', 'd.title', 'd.description', 'd.location_lat', 'd.location_lng',
               'd.phase', 'd.participant_limit', 'd.is_active', 'd.visibility_radius',
-              sql.as(distanceCalculation, 'distance'),
+              // --- CORREÇÃO DE SINTAXE AQUI ---
+              distanceCalculation.as('distance'),
               sql<string[]>`COALESCE(json_agg(dt.tag) FILTER (WHERE dt.tag IS NOT NULL), '[]')`.as('tags')
           ])
           .leftJoin('dream_tags as dt', 'd.id', 'dt.dream_id')
