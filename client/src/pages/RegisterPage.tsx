@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, UserPlus } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext'; // PASSO 1: Importar o useAuth
+import { useAuth } from '@/contexts/AuthContext';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // PASSO 2: Obter a função de login do contexto
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -27,17 +27,19 @@ export const RegisterPage = () => {
     setIsLoading(true);
     setError(null);
 
-    // Validações permanecem as mesmas...
+    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem');
       setIsLoading(false);
       return;
     }
+
     if (!formData.agreeToTerms) {
       setError('Você deve concordar com os termos de uso');
       setIsLoading(false);
       return;
     }
+
     if (formData.password.length < 6) {
       setError('A senha deve ter pelo menos 6 caracteres');
       setIsLoading(false);
@@ -64,13 +66,13 @@ export const RegisterPage = () => {
 
       const data = await response.json();
       
-      // --- PASSO 3: A CORREÇÃO PRINCIPAL ---
-      // Em vez de usar localStorage.setItem, chamamos a função do nosso contexto.
-      // Ela irá atualizar o estado e o localStorage por nós.
+      // Usa a função de login do contexto para atualizar o estado
       login(data);
       
-      // O redirecionamento continua o mesmo.
+      // --- A CORREÇÃO PRINCIPAL ---
+      // Navega para a nova página e depois força um recarregamento.
       navigate('/dashboard');
+      window.location.reload();
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');

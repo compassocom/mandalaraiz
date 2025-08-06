@@ -92,7 +92,6 @@ export const LoginPage = () => {
   };
 
   return (
-    // O resto do seu JSX permanece exatamente o mesmo...
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
@@ -210,8 +209,6 @@ export const LoginPage = () => {
             </form>
           </CardContent>
         </Card>
-        
-        {/* O resto do seu JSX... */}
       </div>
     </div>
   );
