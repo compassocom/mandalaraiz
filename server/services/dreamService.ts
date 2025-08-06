@@ -37,35 +37,51 @@ export class DreamService {
   }
 
   // --- FUNÇÃO CORRIGIDA ---
-  // Find nearby dreams within a given radius using a raw SQL query for performance
+  // Encontra sonhos próximos usando a base de dados para o cálculo de distância
   async findNearbyDreams(lat: number, lng: number, radiusMeters: number = 2000): Promise<any[]> {
-    // Esta query usa a fórmula de Haversine diretamente no Postgres para calcular
-    // a distância e filtrar os resultados de forma eficiente.
-    const dreams = await sql<any>`
-      SELECT 
-        d.id, d.title, d.description, d.location_lat, d.location_lng,
-        d.phase, d.participant_limit, d.is_active,
+    // Esta expressão Kysely injeta SQL puro para o cálculo da distância (fórmula de Haversine),
+    // permitindo que a base de dados faça a filtragem de forma eficiente.
+    const distanceExpression = sql<number>`
         (
           6371000 * acos(
-            cos(radians(${lat})) * cos(radians(d.location_lat)) *
-            cos(radians(d.location_lng) - radians(${lng})) +
-            sin(radians(${lat})) * sin(radians(d.location_lat))
+            cos(radians(${lat})) * cos(radians(dreams.location_lat)) *
+            cos(radians(dreams.location_lng) - radians(${lng})) +
+            sin(radians(${lat})) * sin(radians(dreams.location_lat))
           )
-        ) AS distance
-      FROM dreams d
-      WHERE d.is_active = true
-      HAVING (
-        6371000 * acos(
-          cos(radians(${lat})) * cos(radians(d.location_lat)) *
-          cos(radians(d.location_lng) - radians(${lng})) +
-          sin(radians(${lat})) * sin(radians(d.location_lat))
         )
-      ) <= ${radiusMeters}
-      ORDER BY distance;
-    `.execute(db);
+    `;
 
-    console.log(`Found ${dreams.rows.length} dreams within ${radiusMeters}m of (${lat}, ${lng})`);
-    return dreams.rows;
+    const dreamsWithTags = await db
+      .selectFrom('dreams')
+      .leftJoin('dream_tags', 'dreams.id', 'dream_tags.dream_id')
+      .selectAll('dreams')
+      .select('dream_tags.tag')
+      .select(distanceExpression.as('distance'))
+      .where('dreams.is_active', '=', true)
+      .where(distanceExpression, '<=', radiusMeters)
+      .orderBy('distance')
+      .execute();
+
+    // Agrupa os resultados por sonho para agregar as tags,
+    // tal como a lógica original fazia, mas após a filtragem eficiente na base de dados.
+    const dreamMap = new Map();
+    dreamsWithTags.forEach(dream => {
+      if (!dreamMap.has(dream.id)) {
+        // Remove a propriedade 'tag' individual para evitar confusão
+        const { tag, ...dreamData } = dream;
+        dreamMap.set(dream.id, {
+          ...dreamData,
+          tags: []
+        });
+      }
+      if (dream.tag) {
+        dreamMap.get(dream.id).tags.push(dream.tag);
+      }
+    });
+
+    const result = Array.from(dreamMap.values());
+    console.log(`Found ${result.length} dreams within ${radiusMeters}m of (${lat}, ${lng})`);
+    return result;
   }
 
 
