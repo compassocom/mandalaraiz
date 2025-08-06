@@ -41,62 +41,42 @@ export class DreamService {
     try {
       // Expressão SQL pura para o cálculo da distância (fórmula de Haversine)
       const distanceCalculation = sql<number>`
-          ( 6371000 * acos( cos( radians(${lat}) ) * cos( radians(location_lat) ) * cos( radians(location_lng) - radians(${lng}) ) + sin( radians(${lat}) ) * sin( radians(location_lat) ) ) )
+          ( 6371000 * acos( cos( radians(${lat}) ) * cos( radians(d.location_lat) ) * cos( radians(d.location_lng) - radians(${lng}) ) + sin( radians(${lat}) ) * sin( radians(d.location_lat) ) ) )
       `;
 
-      // PASSO 1: Encontrar apenas os IDs dos sonhos que estão dentro do raio de distância.
-      // Esta query é muito simples e rápida.
-      const nearbyDreamIds = await db
-        .selectFrom('dreams')
-        .select(['id', distanceCalculation.as('distance')])
-        .where('is_active', '=', true)
-        .where('location_lat', 'is not', null)
-        .where('location_lng', 'is not', null)
-        .having(distanceCalculation, '<=', radiusMeters)
-        .orderBy('distance')
-        .limit(50) // Limita a 50 resultados para segurança
-        .execute();
+      // Esta query foi corrigida para incluir todas as colunas não agregadas na cláusula GROUP BY,
+      // o que satisfaz os requisitos do Postgres.
+      const result = await db
+          .selectFrom('dreams as d')
+          .select([
+              'd.id', 'd.title', 'd.description', 'd.location_lat', 'd.location_lng',
+              'd.phase', 'd.participant_limit', 'd.is_active', 'd.visibility_radius',
+              sql.as(distanceCalculation, 'distance'),
+              sql<string[]>`COALESCE(json_agg(dt.tag) FILTER (WHERE dt.tag IS NOT NULL), '[]')`.as('tags')
+          ])
+          .leftJoin('dream_tags as dt', 'd.id', 'dt.dream_id')
+          .where('d.is_active', '=', true)
+          .where('d.location_lat', 'is not', null)
+          .where('d.location_lng', 'is not', null)
+          .groupBy([ // Cláusula GROUP BY corrigida e expandida
+              'd.id', 
+              'd.title', 
+              'd.description', 
+              'd.location_lat', 
+              'd.location_lng',
+              'd.phase', 
+              'd.participant_limit', 
+              'd.is_active',
+              'd.visibility_radius'
+          ])
+          .having(distanceCalculation, '<=', radiusMeters)
+          .orderBy('distance')
+          .execute();
 
-      if (nearbyDreamIds.length === 0) {
-        console.log(`Found 0 dreams within ${radiusMeters}m of (${lat}, ${lng})`);
-        return [];
-      }
-
-      const dreamIds = nearbyDreamIds.map(d => d.id);
-      const distancesMap = new Map(nearbyDreamIds.map(d => [d.id, d.distance]));
-
-      // PASSO 2: Buscar os detalhes completos e as tags apenas para os sonhos encontrados.
-      const dreamsWithTags = await db
-        .selectFrom('dreams')
-        .leftJoin('dream_tags', 'dreams.id', 'dream_tags.dream_id')
-        .selectAll('dreams')
-        .select('dream_tags.tag')
-        .where('dreams.id', 'in', dreamIds)
-        .execute();
-
-      // PASSO 3: Agrupar os resultados em JavaScript (agora com um conjunto de dados muito menor).
-      const dreamMap = new Map();
-      dreamsWithTags.forEach(dream => {
-        if (!dreamMap.has(dream.id)) {
-          const { tag, ...dreamData } = dream;
-          dreamMap.set(dream.id, {
-            ...dreamData,
-            distance: distancesMap.get(dream.id), // Adiciona a distância que calculámos antes
-            tags: []
-          });
-        }
-        if (dream.tag) {
-          dreamMap.get(dream.id).tags.push(dream.tag);
-        }
-      });
-      
-      const result = Array.from(dreamMap.values()).sort((a, b) => a.distance - b.distance);
-      console.log(`Found ${result.length} dreams and returning them.`);
+      console.log(`Found ${result.length} dreams within ${radiusMeters}m of (${lat}, ${lng})`);
       return result;
-
     } catch (error) {
         console.error('[findNearbyDreams ERROR]:', error);
-        // Devolve um erro 500 explícito para podermos ver a causa nos logs
         throw new Error('Failed to fetch nearby dreams due to a database error.');
     }
   }
