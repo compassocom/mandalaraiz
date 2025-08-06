@@ -58,6 +58,9 @@ export class DreamService {
       .select('dream_tags.tag')
       .select(distanceExpression.as('distance'))
       .where('dreams.is_active', '=', true)
+      // ADICIONADO: Garante que apenas sonhos com coordenadas válidas são processados
+      .where('dreams.location_lat', 'is not', null)
+      .where('dreams.location_lng', 'is not', null)
       .where(distanceExpression, '<=', radiusMeters)
       .orderBy('distance')
       .execute();
