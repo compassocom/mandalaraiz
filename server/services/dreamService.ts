@@ -36,53 +36,34 @@ export class DreamService {
     return dream;
   }
 
-  // --- FUNÇÃO CORRIGIDA ---
-  // Encontra sonhos próximos usando a base de dados para o cálculo de distância
+  // --- FUNÇÃO CORRIGIDA (VERSÃO FINAL E MAIS ROBUSTA) ---
   async findNearbyDreams(lat: number, lng: number, radiusMeters: number = 2000): Promise<any[]> {
-    // Esta expressão Kysely injeta SQL puro para o cálculo da distância (fórmula de Haversine),
-    // permitindo que a base de dados faça a filtragem de forma eficiente.
-    const distanceExpression = sql<number>`
-        (
-          6371000 * acos(
-            cos(radians(${lat})) * cos(radians(dreams.location_lat)) *
-            cos(radians(dreams.location_lng) - radians(${lng})) +
-            sin(radians(${lat})) * sin(radians(dreams.location_lat))
-          )
-        )
+    // Expressão SQL pura para o cálculo da distância (fórmula de Haversine)
+    const distanceCalculation = sql<number>`
+        ( 6371000 * acos( cos( radians(${lat}) ) * cos( radians(d.location_lat) ) * cos( radians(d.location_lng) - radians(${lng}) ) + sin( radians(${lat}) ) * sin( radians(d.location_lat) ) ) )
     `;
 
-    const dreamsWithTags = await db
-      .selectFrom('dreams')
-      .leftJoin('dream_tags', 'dreams.id', 'dream_tags.dream_id')
-      .selectAll('dreams')
-      .select('dream_tags.tag')
-      .select(distanceExpression.as('distance'))
-      .where('dreams.is_active', '=', true)
-      // ADICIONADO: Garante que apenas sonhos com coordenadas válidas são processados
-      .where('dreams.location_lat', 'is not', null)
-      .where('dreams.location_lng', 'is not', null)
-      .where(distanceExpression, '<=', radiusMeters)
-      .orderBy('distance')
-      .execute();
+    // Esta query é mais eficiente: calcula a distância, filtra por ela, agrupa por sonho
+    // e agrega as tags, tudo numa única operação na base de dados.
+    const result = await db
+        .selectFrom('dreams as d')
+        .select([
+            'd.id', 'd.title', 'd.description', 'd.location_lat', 'd.location_lng',
+            'd.phase', 'd.participant_limit', 'd.is_active',
+            // Seleciona a distância calculada
+            sql.as(distanceCalculation, 'distance'),
+            // Agrega as tags num array JSON, tratando casos onde não há tags.
+            sql<string[]>`COALESCE(json_agg(dt.tag) FILTER (WHERE dt.tag IS NOT NULL), '[]')`.as('tags')
+        ])
+        .leftJoin('dream_tags as dt', 'd.id', 'dt.dream_id')
+        .where('d.is_active', '=', true)
+        .where('d.location_lat', 'is not', null)
+        .where('d.location_lng', 'is not', null)
+        .groupBy(['d.id']) // Agrupa por sonho para que o json_agg funcione corretamente
+        .having(distanceCalculation, '<=', radiusMeters)
+        .orderBy('distance')
+        .execute();
 
-    // Agrupa os resultados por sonho para agregar as tags,
-    // tal como a lógica original fazia, mas após a filtragem eficiente na base de dados.
-    const dreamMap = new Map();
-    dreamsWithTags.forEach(dream => {
-      if (!dreamMap.has(dream.id)) {
-        // Remove a propriedade 'tag' individual para evitar confusão
-        const { tag, ...dreamData } = dream;
-        dreamMap.set(dream.id, {
-          ...dreamData,
-          tags: []
-        });
-      }
-      if (dream.tag) {
-        dreamMap.get(dream.id).tags.push(dream.tag);
-      }
-    });
-
-    const result = Array.from(dreamMap.values());
     console.log(`Found ${result.length} dreams within ${radiusMeters}m of (${lat}, ${lng})`);
     return result;
   }
